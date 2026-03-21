@@ -1,0 +1,133 @@
+---
+import StoreLayout from '../layouts/StoreLayout.astro';
+import ProductCard from '../components/storefront/ProductCard.astro';
+import { supabase } from '../lib/supabase';
+
+const { data: featured } = await supabase
+  .from('products')
+  .select('*')
+  .eq('featured', true)
+  .eq('active', true)
+  .order('created_at', { ascending: false })
+  .limit(8);
+
+const { data: categories } = await supabase
+  .from('categories')
+  .select('*')
+  .eq('active', true)
+  .order('position');
+---
+
+<StoreLayout>
+  <!-- Hero -->
+  <section class="relative bg-gradient-to-br from-stone-900 via-stone-800 to-amber-900 text-white overflow-hidden">
+    <div class="max-w-6xl mx-auto px-4 py-28 relative">
+      <div class="max-w-2xl">
+        <p class="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-4">Joyería Artesanal</p>
+        <h1 class="text-5xl md:text-7xl font-bold leading-tight mb-6">
+          Piezas únicas<br />hechas a mano
+        </h1>
+        <p class="text-stone-300 text-lg mb-8 leading-relaxed">
+          Pendientes, colgantes y pulseras creados con arcilla polimérica y resina.<br />
+          Cada pieza es irrepetible, como tú.
+        </p>
+        <div class="flex flex-wrap gap-4">
+          <a href="/tienda" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-8 py-3 rounded-full transition-colors">
+            Explorar tienda
+          </a>
+          <a href="/tienda?destacados=true" class="border border-white/30 hover:border-white text-white font-semibold px-8 py-3 rounded-full transition-colors">
+            Ver novedades
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorías -->
+  {categories && categories.length > 0 && (
+    <section class="max-w-6xl mx-auto px-4 py-16">
+      <h2 class="text-2xl font-bold text-stone-900 mb-8">Colecciones</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {categories.map(cat => (
+          <a href={`/tienda?categoria=${cat.slug}`} class="group relative overflow-hidden rounded-2xl aspect-square bg-stone-200">
+            {cat.image_url && (
+              <img src={cat.image_url} alt={cat.name} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            )}
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+              <span class="text-white font-bold text-lg">{cat.name}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- Productos destacados -->
+  {featured && featured.length > 0 && (
+    <section class="max-w-6xl mx-auto px-4 py-8 pb-16">
+      <div class="flex items-center justify-between mb-8">
+        <h2 class="text-2xl font-bold text-stone-900">Piezas destacadas</h2>
+        <a href="/tienda" class="text-amber-700 hover:text-amber-800 font-medium text-sm">Ver todo →</a>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {featured.map(product => <ProductCard product={product} />)}
+      </div>
+    </section>
+  )}
+
+  <!-- Sobre nosotros -->
+  <section class="bg-amber-50 py-20">
+    <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <p class="text-amber-700 text-sm font-semibold tracking-widest uppercase mb-3">Sobre Atlas&You</p>
+        <h2 class="text-4xl font-bold text-stone-900 mb-6">Artesanía con alma</h2>
+        <p class="text-stone-600 leading-relaxed mb-4">
+          Cada pieza de Atlas&You nace de la pasión por crear algo único. Trabajamos con arcilla polimérica, resina y otras técnicas artesanales para dar vida a joyas que cuentan historias.
+        </p>
+        <p class="text-stone-600 leading-relaxed mb-8">
+          No hay dos piezas iguales. Lo que tienes en tus manos es completamente irrepetible.
+        </p>
+        <a href="/tienda" class="inline-block bg-stone-900 hover:bg-stone-800 text-white font-semibold px-8 py-3 rounded-full transition-colors">
+          Descubrir la colección
+        </a>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div class="rounded-2xl bg-amber-200 aspect-[3/4]"></div>
+        <div class="rounded-2xl bg-amber-300 aspect-[3/4] mt-8"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Características -->
+  <section class="max-w-6xl mx-auto px-4 py-20">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+      <div class="p-6">
+        <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </div>
+        <h3 class="font-bold text-stone-900 mb-2">100% Artesanal</h3>
+        <p class="text-stone-500 text-sm">Cada pieza fabricada a mano con dedicación y cariño</p>
+      </div>
+      <div class="p-6">
+        <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+        </div>
+        <h3 class="font-bold text-stone-900 mb-2">Envío a España y Europa</h3>
+        <p class="text-stone-500 text-sm">Enviamos a toda España y a la mayoría de países europeos</p>
+      </div>
+      <div class="p-6">
+        <div class="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <h3 class="font-bold text-stone-900 mb-2">Pago seguro</h3>
+        <p class="text-stone-500 text-sm">Pago con tarjeta, Apple Pay y Google Pay</p>
+      </div>
+    </div>
+  </section>
+</StoreLayout>

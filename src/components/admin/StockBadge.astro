@@ -1,0 +1,16 @@
+---
+interface Props {
+  stock: number;
+}
+const { stock } = Astro.props;
+---
+
+{stock === 0 && (
+  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Agotado</span>
+)}
+{stock > 0 && stock <= 3 && (
+  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Stock bajo ({stock})</span>
+)}
+{stock > 3 && (
+  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{stock} en stock</span>
+)}

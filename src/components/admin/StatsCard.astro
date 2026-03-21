@@ -1,0 +1,28 @@
+---
+interface Props {
+  title: string;
+  value: string;
+  change?: string;
+  positive?: boolean;
+  icon: string;
+}
+
+const { title, value, change, positive, icon } = Astro.props;
+---
+
+<div class="bg-white rounded-xl p-6 shadow-sm border border-stone-200">
+  <div class="flex items-center justify-between mb-4">
+    <span class="text-stone-500 text-sm font-medium">{title}</span>
+    <div class="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icon} />
+      </svg>
+    </div>
+  </div>
+  <div class="text-3xl font-bold text-stone-900">{value}</div>
+  {change && (
+    <p class={`text-sm mt-1 ${positive ? 'text-green-600' : 'text-red-500'}`}>
+      {positive ? '↑' : '↓'} {change} vs mes anterior
+    </p>
+  )}
+</div>

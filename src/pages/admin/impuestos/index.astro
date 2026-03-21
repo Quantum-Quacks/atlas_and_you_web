@@ -1,0 +1,117 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { requireAdmin } from '../../../lib/auth';
+
+const user = await requireAdmin(Astro.request);
+if (user instanceof Response) return user;
+
+const { data: taxRates } = await supabaseAdmin
+  .from('tax_rates')
+  .select('*')
+  .order('country');
+---
+
+<AdminLayout title="Impuestos — Atlas&You" currentPage="impuestos">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-xl font-bold text-stone-800">Gestión de IVA</h2>
+      <p class="text-stone-400 text-sm">Configura los tipos de IVA por país</p>
+    </div>
+    <button id="new-tax-btn" class="bg-amber-700 hover:bg-amber-800 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
+      + Nueva tasa
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+    <div class="bg-amber-50 border border-amber-200 rounded-xl p-5">
+      <h3 class="font-bold text-amber-900 mb-2">España — IVA estándar 21%</h3>
+      <p class="text-amber-700 text-sm">Los precios en la tienda incluyen IVA. El 21% se aplica automáticamente a todos los pedidos nacionales.</p>
+    </div>
+    <div class="bg-stone-50 border border-stone-200 rounded-xl p-5">
+      <h3 class="font-bold text-stone-800 mb-2">OSS — Ventas intracomunitarias</h3>
+      <p class="text-stone-500 text-sm">Para ventas a otros países de la UE, se aplica el IVA del país destino. Consulta con tu asesor fiscal cuando superes los 10.000€ anuales en ventas a la UE.</p>
+    </div>
+  </div>
+
+  <!-- Modal nueva tasa -->
+  <div id="tax-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+      <h3 class="font-bold text-stone-800 text-lg mb-4">Nueva tasa de IVA</h3>
+      <form id="tax-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Nombre</label>
+          <input type="text" name="name" required placeholder="IVA España" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Código de país (ISO)</label>
+          <input type="text" name="country" required placeholder="ES" maxlength="2" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Tipo (%)</label>
+          <input type="number" name="rate_percentage" required min="0" max="100" step="0.1" value="21" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div class="flex gap-3">
+          <button type="submit" class="bg-amber-700 hover:bg-amber-800 text-white font-medium px-5 py-2 rounded-lg text-sm">Crear</button>
+          <button type="button" id="cancel-tax" class="border border-stone-300 text-stone-600 font-medium px-5 py-2 rounded-lg text-sm">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-stone-50 text-stone-500 text-xs uppercase">
+        <tr>
+          <th class="px-6 py-3 text-left font-medium">País</th>
+          <th class="px-6 py-3 text-left font-medium">Nombre</th>
+          <th class="px-6 py-3 text-left font-medium">Tipo IVA</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-stone-100">
+        {taxRates?.map(rate => (
+          <tr class="hover:bg-stone-50">
+            <td class="px-6 py-4 font-mono font-bold text-stone-900">{rate.country}</td>
+            <td class="px-6 py-4 text-stone-700">{rate.name}</td>
+            <td class="px-6 py-4 font-bold text-stone-900">{rate.rate_percentage}%</td>
+            <td class="px-6 py-4">
+              <button class="delete-tax text-xs text-stone-300 hover:text-red-500" data-id={rate.id}>Eliminar</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    {(!taxRates || taxRates.length === 0) && (
+      <p class="text-center py-10 text-stone-400 text-sm">No hay tasas configuradas. Se aplicará 21% por defecto.</p>
+    )}
+  </div>
+
+  <script>
+    document.getElementById('new-tax-btn')?.addEventListener('click', () => document.getElementById('tax-modal')!.classList.remove('hidden'));
+    document.getElementById('cancel-tax')?.addEventListener('click', () => document.getElementById('tax-modal')!.classList.add('hidden'));
+
+    document.getElementById('tax-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      const res = await fetch('/api/admin/taxes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fd.get('name'),
+          country: (fd.get('country') as string).toUpperCase(),
+          rate_percentage: parseFloat(fd.get('rate_percentage') as string),
+        }),
+      });
+      if (res.ok) window.location.reload();
+    });
+
+    document.querySelectorAll('.delete-tax').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('¿Eliminar esta tasa?')) return;
+        await fetch(`/api/admin/taxes/${(btn as HTMLElement).dataset.id}`, { method: 'DELETE' });
+        window.location.reload();
+      });
+    });
+  </script>
+</AdminLayout>

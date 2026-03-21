@@ -1,0 +1,166 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { requireAdmin } from '../../../lib/auth';
+
+const user = await requireAdmin(Astro.request);
+if (user instanceof Response) return user;
+
+const { data: categories } = await supabaseAdmin.from('categories').select('id, name').eq('active', true).order('name');
+---
+
+<AdminLayout title="Nuevo producto — Atlas&You" currentPage="productos">
+  <div class="max-w-3xl">
+    <div class="flex items-center gap-3 mb-6">
+      <a href="/admin/productos" class="text-stone-400 hover:text-stone-600">← Volver</a>
+      <h2 class="text-xl font-bold text-stone-800">Nuevo producto</h2>
+    </div>
+
+    <form id="product-form" class="space-y-6">
+      <!-- Info básica -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-4">
+        <h3 class="font-semibold text-stone-700">Información básica</h3>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Nombre del producto *</label>
+          <input type="text" name="name" required class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Descripción</label>
+          <textarea name="description" rows="4" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Categoría</label>
+            <select name="category_id" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <option value="">Sin categoría</option>
+              {categories?.map(cat => <option value={cat.id}>{cat.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">SKU / Referencia</label>
+            <input type="text" name="sku" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Etiquetas (separadas por coma)</label>
+          <input type="text" name="tags" placeholder="arcilla, pendientes, floral" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+
+      <!-- Precio y stock -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-4">
+        <h3 class="font-semibold text-stone-700">Precio y stock</h3>
+        <div class="grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Precio (€) *</label>
+            <input type="number" name="price" required min="0" step="0.01" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Precio tachado (€)</label>
+            <input type="number" name="compare_at_price" min="0" step="0.01" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Stock *</label>
+            <input type="number" name="stock" required min="0" value="1" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-stone-700 mb-1">Peso (gramos, para calcular envío)</label>
+          <input type="number" name="weight_grams" min="0" value="50" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+      </div>
+
+      <!-- Imágenes (URLs Cloudinary) -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-4">
+        <h3 class="font-semibold text-stone-700">Imágenes</h3>
+        <p class="text-xs text-stone-400">Sube las imágenes a Cloudinary y pega las URLs aquí. La primera imagen será la principal.</p>
+        <div id="image-inputs" class="space-y-2">
+          <div class="flex gap-2">
+            <input type="url" name="images[]" placeholder="https://res.cloudinary.com/..." class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          </div>
+        </div>
+        <button type="button" id="add-image" class="text-sm text-amber-700 hover:text-amber-800 font-medium">+ Añadir otra imagen</button>
+      </div>
+
+      <!-- Opciones -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6 space-y-3">
+        <h3 class="font-semibold text-stone-700">Opciones de visibilidad</h3>
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" name="active" checked class="w-4 h-4 rounded accent-amber-700" />
+          <span class="text-sm text-stone-700">Producto activo (visible en la tienda)</span>
+        </label>
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="checkbox" name="featured" class="w-4 h-4 rounded accent-amber-700" />
+          <span class="text-sm text-stone-700">Destacar en la página de inicio</span>
+        </label>
+      </div>
+
+      <p id="form-error" class="text-red-500 text-sm hidden"></p>
+
+      <div class="flex gap-3">
+        <button type="submit" class="bg-amber-700 hover:bg-amber-800 text-white font-semibold px-8 py-3 rounded-xl transition-colors">
+          Crear producto
+        </button>
+        <a href="/admin/productos" class="border border-stone-300 hover:border-stone-400 text-stone-600 font-medium px-6 py-3 rounded-xl transition-colors">
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Añadir más inputs de imagen
+    document.getElementById('add-image')?.addEventListener('click', () => {
+      const container = document.getElementById('image-inputs')!;
+      const div = document.createElement('div');
+      div.className = 'flex gap-2';
+      div.innerHTML = `
+        <input type="url" name="images[]" placeholder="https://res.cloudinary.com/..." class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        <button type="button" onclick="this.parentElement.remove()" class="text-stone-300 hover:text-red-500 px-2">×</button>
+      `;
+      container.appendChild(div);
+    });
+
+    // Submit del formulario
+    document.getElementById('product-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+      const errorEl = document.getElementById('form-error')!;
+
+      const images = Array.from(formData.getAll('images[]')).filter(Boolean) as string[];
+      const tags = (formData.get('tags') as string || '').split(',').map(t => t.trim()).filter(Boolean);
+
+      const payload = {
+        name: formData.get('name'),
+        description: formData.get('description'),
+        price: parseFloat(formData.get('price') as string),
+        compare_at_price: formData.get('compare_at_price') ? parseFloat(formData.get('compare_at_price') as string) : null,
+        stock: parseInt(formData.get('stock') as string),
+        weight_grams: parseInt(formData.get('weight_grams') as string) || 50,
+        category_id: formData.get('category_id') || null,
+        sku: formData.get('sku') || null,
+        tags,
+        images,
+        active: formData.has('active'),
+        featured: formData.has('featured'),
+        slug: (formData.get('name') as string).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+      };
+
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        errorEl.textContent = data.error;
+        errorEl.classList.remove('hidden');
+      } else {
+        window.location.href = `/admin/productos/${data.id}`;
+      }
+    });
+  </script>
+</AdminLayout>

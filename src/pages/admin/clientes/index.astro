@@ -1,0 +1,89 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { requireAdmin } from '../../../lib/auth';
+
+const user = await requireAdmin(Astro.request);
+if (user instanceof Response) return user;
+
+// Clientes únicos agrupados por email con stats de pedidos
+const { data: customers } = await supabaseAdmin
+  .from('orders')
+  .select('customer_email, customer_name, customer_phone, total, created_at')
+  .eq('payment_status', 'paid')
+  .order('created_at', { ascending: false });
+
+// Agrupar por email
+const customerMap = new Map<string, any>();
+customers?.forEach(order => {
+  const existing = customerMap.get(order.customer_email);
+  if (existing) {
+    existing.total_orders++;
+    existing.total_spent += order.total;
+    if (new Date(order.created_at) > new Date(existing.last_order)) {
+      existing.last_order = order.created_at;
+    }
+  } else {
+    customerMap.set(order.customer_email, {
+      email: order.customer_email,
+      name: order.customer_name,
+      phone: order.customer_phone,
+      total_orders: 1,
+      total_spent: order.total,
+      last_order: order.created_at,
+    });
+  }
+});
+
+const uniqueCustomers = Array.from(customerMap.values())
+  .sort((a, b) => b.total_spent - a.total_spent);
+---
+
+<AdminLayout title="Clientes — Atlas&You" currentPage="clientes">
+  <div class="mb-6">
+    <h2 class="text-xl font-bold text-stone-800">Clientes</h2>
+    <p class="text-stone-400 text-sm">{uniqueCustomers.length} clientes</p>
+  </div>
+
+  <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-stone-50 text-stone-500 text-xs uppercase">
+          <tr>
+            <th class="px-6 py-3 text-left font-medium">Cliente</th>
+            <th class="px-6 py-3 text-left font-medium">Pedidos</th>
+            <th class="px-6 py-3 text-left font-medium">Total gastado</th>
+            <th class="px-6 py-3 text-left font-medium">Último pedido</th>
+            <th class="px-6 py-3 text-left font-medium">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+          {uniqueCustomers.map(customer => (
+            <tr class="hover:bg-stone-50">
+              <td class="px-6 py-4">
+                <p class="font-medium text-stone-800">{customer.name}</p>
+                <p class="text-stone-400 text-xs">{customer.email}</p>
+              </td>
+              <td class="px-6 py-4 text-stone-700">{customer.total_orders}</td>
+              <td class="px-6 py-4 font-bold text-stone-900">{customer.total_spent.toFixed(2)}€</td>
+              <td class="px-6 py-4 text-stone-400 text-xs">
+                {new Date(customer.last_order).toLocaleDateString('es-ES')}
+              </td>
+              <td class="px-6 py-4">
+                <a
+                  href={`/admin/pedidos?cliente=${customer.email}`}
+                  class="text-amber-700 hover:text-amber-800 text-xs font-medium"
+                >
+                  Ver pedidos →
+                </a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {uniqueCustomers.length === 0 && (
+        <p class="text-center py-16 text-stone-400 text-sm">No hay clientes todavía</p>
+      )}
+    </div>
+  </div>
+</AdminLayout>

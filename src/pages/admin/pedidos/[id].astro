@@ -1,0 +1,231 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { requireAdmin } from '../../../lib/auth';
+
+const user = await requireAdmin(Astro.request);
+if (user instanceof Response) return user;
+
+const { id } = Astro.params;
+
+const { data: order } = await supabaseAdmin
+  .from('orders')
+  .select('*, order_items(*)')
+  .eq('id', id)
+  .single();
+
+if (!order) return Astro.redirect('/admin/pedidos');
+
+const statusOptions = [
+  { value: 'pending', label: 'Pendiente' },
+  { value: 'paid', label: 'Pagado' },
+  { value: 'shipped', label: 'Enviado' },
+  { value: 'delivered', label: 'Entregado' },
+  { value: 'cancelled', label: 'Cancelado' },
+];
+---
+
+<AdminLayout title={`Pedido ${order.order_number} — Atlas&You`} currentPage="pedidos">
+  <div class="flex items-center gap-3 mb-6">
+    <a href="/admin/pedidos" class="text-stone-400 hover:text-stone-600">← Volver</a>
+    <h2 class="text-xl font-bold text-stone-800">Pedido {order.order_number}</h2>
+    <span class="text-stone-400 text-sm">{new Date(order.created_at).toLocaleDateString('es-ES', { dateStyle: 'long' })}</span>
+  </div>
+
+  <div class="grid xl:grid-cols-3 gap-6">
+    <!-- Columna izquierda -->
+    <div class="xl:col-span-2 space-y-6">
+      <!-- Items del pedido -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6">
+        <h3 class="font-bold text-stone-800 mb-4">Productos</h3>
+        <div class="space-y-3">
+          {order.order_items?.map((item: any) => (
+            <div class="flex items-center gap-4 py-3 border-b border-stone-100 last:border-0">
+              <div class="flex-1">
+                <p class="font-medium text-stone-800">{item.name}</p>
+                <p class="text-xs text-stone-400">x{item.quantity} · {item.unit_price.toFixed(2)}€/ud</p>
+              </div>
+              <p class="font-bold text-stone-900">{item.total.toFixed(2)}€</p>
+            </div>
+          ))}
+        </div>
+        <div class="mt-4 space-y-2 text-sm border-t border-stone-200 pt-4">
+          <div class="flex justify-between text-stone-500">
+            <span>Subtotal</span>
+            <span>{order.subtotal.toFixed(2)}€</span>
+          </div>
+          {order.discount_amount > 0 && (
+            <div class="flex justify-between text-green-600">
+              <span>Descuento {order.discount_code && `(${order.discount_code})`}</span>
+              <span>-{order.discount_amount.toFixed(2)}€</span>
+            </div>
+          )}
+          <div class="flex justify-between text-stone-500">
+            <span>Envío</span>
+            <span>{order.shipping_cost === 0 ? 'Gratis' : `${order.shipping_cost.toFixed(2)}€`}</span>
+          </div>
+          <div class="flex justify-between text-stone-500">
+            <span>IVA (incluido)</span>
+            <span>{order.tax_amount.toFixed(2)}€</span>
+          </div>
+          <div class="flex justify-between font-bold text-stone-900 text-base pt-2 border-t border-stone-200">
+            <span>Total</span>
+            <span>{order.total.toFixed(2)}€</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dirección de envío -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6">
+        <h3 class="font-bold text-stone-800 mb-4">Dirección de envío</h3>
+        {order.shipping_address && (
+          <address class="not-italic text-stone-600 text-sm leading-relaxed">
+            <p class="font-medium text-stone-800">{order.shipping_address.name}</p>
+            <p>{order.shipping_address.street}</p>
+            <p>{order.shipping_address.postal_code} {order.shipping_address.city}</p>
+            {order.shipping_address.province && <p>{order.shipping_address.province}</p>}
+            <p>{order.shipping_address.country}</p>
+          </address>
+        )}
+      </div>
+
+      {order.notes && (
+        <div class="bg-amber-50 rounded-xl border border-amber-200 p-6">
+          <h3 class="font-bold text-stone-800 mb-2">Notas del pedido</h3>
+          <p class="text-stone-600 text-sm">{order.notes}</p>
+        </div>
+      )}
+    </div>
+
+    <!-- Columna derecha: gestión -->
+    <div class="space-y-6">
+      <!-- Cliente -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6">
+        <h3 class="font-bold text-stone-800 mb-4">Cliente</h3>
+        <div class="space-y-2 text-sm">
+          <p class="font-medium text-stone-800">{order.customer_name}</p>
+          <p class="text-stone-500">{order.customer_email}</p>
+          {order.customer_phone && <p class="text-stone-500">{order.customer_phone}</p>}
+        </div>
+      </div>
+
+      <!-- Estado del pedido -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6">
+        <h3 class="font-bold text-stone-800 mb-4">Estado del pedido</h3>
+        <form id="status-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Estado actual</label>
+            <select id="status-select" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              {statusOptions.map(opt => (
+                <option value={opt.value} selected={order.status === opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            id="update-status"
+            class="w-full bg-stone-900 hover:bg-stone-800 text-white font-medium py-2.5 rounded-xl text-sm transition-colors"
+          >
+            Actualizar estado
+          </button>
+        </form>
+      </div>
+
+      <!-- Envío y seguimiento -->
+      <div class="bg-white rounded-xl border border-stone-200 p-6">
+        <h3 class="font-bold text-stone-800 mb-4">Seguimiento de envío</h3>
+        <div class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Transportista</label>
+            <select id="carrier" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <option value="" selected={!order.shipping_carrier}>Seleccionar...</option>
+              <option value="Correos" selected={order.shipping_carrier === 'Correos'}>Correos</option>
+              <option value="MRW" selected={order.shipping_carrier === 'MRW'}>MRW</option>
+              <option value="GLS" selected={order.shipping_carrier === 'GLS'}>GLS</option>
+              <option value="SEUR" selected={order.shipping_carrier === 'SEUR'}>SEUR</option>
+              <option value="DHL" selected={order.shipping_carrier === 'DHL'}>DHL</option>
+              <option value="DPD" selected={order.shipping_carrier === 'DPD'}>DPD</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">Número de seguimiento</label>
+            <input
+              type="text"
+              id="tracking-number"
+              value={order.tracking_number || ''}
+              placeholder="ES123456789ES"
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-stone-700 mb-1">URL de seguimiento</label>
+            <input
+              type="url"
+              id="tracking-url"
+              value={order.tracking_url || ''}
+              placeholder="https://..."
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="send-shipping-email" checked class="accent-amber-700" />
+            <span class="text-xs text-stone-600">Enviar email de envío al cliente</span>
+          </label>
+          <button
+            id="save-tracking"
+            class="w-full bg-amber-700 hover:bg-amber-800 text-white font-medium py-2.5 rounded-xl text-sm transition-colors"
+          >
+            Guardar seguimiento
+          </button>
+        </div>
+        <p id="tracking-msg" class="text-xs mt-2 hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <script define:vars={{ orderId: order.id }}>
+    // Actualizar estado
+    document.getElementById('update-status')?.addEventListener('click', async () => {
+      const status = (document.getElementById('status-select') as HTMLSelectElement).value;
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        alert('Estado actualizado correctamente');
+        window.location.reload();
+      }
+    });
+
+    // Guardar seguimiento
+    document.getElementById('save-tracking')?.addEventListener('click', async () => {
+      const carrier = (document.getElementById('carrier') as HTMLSelectElement).value;
+      const trackingNumber = (document.getElementById('tracking-number') as HTMLInputElement).value;
+      const trackingUrl = (document.getElementById('tracking-url') as HTMLInputElement).value;
+      const sendEmail = (document.getElementById('send-shipping-email') as HTMLInputElement).checked;
+
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shipping_carrier: carrier,
+          tracking_number: trackingNumber,
+          tracking_url: trackingUrl,
+          status: 'shipped',
+          send_shipping_email: sendEmail,
+        }),
+      });
+
+      const msg = document.getElementById('tracking-msg')!;
+      if (res.ok) {
+        msg.textContent = '✓ Seguimiento guardado y email enviado';
+        msg.className = 'text-xs mt-2 text-green-600';
+      } else {
+        msg.textContent = 'Error al guardar';
+        msg.className = 'text-xs mt-2 text-red-500';
+      }
+      msg.classList.remove('hidden');
+    });
+  </script>
+</AdminLayout>

@@ -1,0 +1,226 @@
+---
+import StoreLayout from '../../layouts/StoreLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+const { slug } = Astro.params;
+
+const { data: product } = await supabase
+  .from('products')
+  .select('*, categories(name, slug), product_variants(*)')
+  .eq('slug', slug)
+  .eq('active', true)
+  .single();
+
+if (!product) {
+  return Astro.redirect('/tienda');
+}
+
+// Productos relacionados
+const { data: related } = await supabase
+  .from('products')
+  .select('id, name, slug, price, images')
+  .eq('category_id', product.category_id)
+  .eq('active', true)
+  .neq('id', product.id)
+  .limit(4);
+---
+
+<StoreLayout title={`${product.name} — Atlas&You`} description={product.description}>
+  <div class="max-w-6xl mx-auto px-4 py-10">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-stone-400 mb-8">
+      <a href="/" class="hover:text-amber-700">Inicio</a>
+      <span>/</span>
+      <a href="/tienda" class="hover:text-amber-700">Tienda</a>
+      {product.categories && (
+        <>
+          <span>/</span>
+          <a href={`/tienda?categoria=${product.categories.slug}`} class="hover:text-amber-700">{product.categories.name}</a>
+        </>
+      )}
+      <span>/</span>
+      <span class="text-stone-700">{product.name}</span>
+    </nav>
+
+    <div class="grid md:grid-cols-2 gap-12">
+      <!-- Galería -->
+      <div class="space-y-3">
+        <div class="aspect-square rounded-2xl overflow-hidden bg-stone-100" id="main-image-container">
+          <img
+            id="main-image"
+            src={product.images?.[0] || '/placeholder.jpg'}
+            alt={product.name}
+            class="w-full h-full object-cover"
+          />
+        </div>
+        {product.images && product.images.length > 1 && (
+          <div class="grid grid-cols-4 gap-2">
+            {product.images.map((img: string, i: number) => (
+              <button
+                class="aspect-square rounded-xl overflow-hidden bg-stone-100 border-2 border-transparent hover:border-amber-600 transition-colors thumbnail-btn"
+                data-src={img}
+              >
+                <img src={img} alt={`${product.name} - foto ${i + 1}`} class="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Info producto -->
+      <div>
+        {product.categories && (
+          <p class="text-amber-700 text-sm font-medium mb-2">{product.categories.name}</p>
+        )}
+        <h1 class="text-3xl font-bold text-stone-900 mb-4">{product.name}</h1>
+
+        <!-- Precio -->
+        <div class="flex items-center gap-3 mb-6">
+          <span class="text-3xl font-bold text-stone-900">{product.price.toFixed(2)}€</span>
+          {product.compare_at_price && product.compare_at_price > product.price && (
+            <span class="text-xl text-stone-400 line-through">{product.compare_at_price.toFixed(2)}€</span>
+          )}
+          <span class="text-sm text-stone-400">IVA incluido</span>
+        </div>
+
+        <!-- Stock -->
+        {product.stock === 0 ? (
+          <p class="text-red-500 font-medium mb-6">Agotado — Consulta disponibilidad</p>
+        ) : product.stock <= 3 ? (
+          <p class="text-amber-600 font-medium mb-6">¡Solo quedan {product.stock} unidades!</p>
+        ) : null}
+
+        <!-- Variantes -->
+        {product.product_variants && product.product_variants.length > 0 && (
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-stone-700 mb-2">Variante</label>
+            <div class="flex flex-wrap gap-2">
+              {product.product_variants.map((variant: any) => (
+                <button
+                  class="px-4 py-2 border border-stone-300 rounded-lg text-sm hover:border-amber-600 hover:text-amber-700 transition-colors variant-btn"
+                  data-variant-id={variant.id}
+                  data-price-modifier={variant.price_modifier}
+                  data-stock={variant.stock}
+                >
+                  {variant.name}: {variant.value}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <!-- Descripción -->
+        <div class="prose prose-stone text-sm mb-8">
+          <p>{product.description}</p>
+        </div>
+
+        <!-- Tags -->
+        {product.tags && product.tags.length > 0 && (
+          <div class="flex flex-wrap gap-2 mb-8">
+            {product.tags.map((tag: string) => (
+              <span class="text-xs bg-stone-100 text-stone-600 px-3 py-1 rounded-full">{tag}</span>
+            ))}
+          </div>
+        )}
+
+        <!-- Botón añadir al carrito -->
+        <button
+          id="add-to-cart"
+          disabled={product.stock === 0}
+          data-product={JSON.stringify({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.images?.[0] || '',
+            slug: product.slug,
+            stock: product.stock,
+          })}
+          class="w-full bg-stone-900 hover:bg-stone-800 disabled:bg-stone-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-xl transition-colors text-lg"
+        >
+          {product.stock === 0 ? 'Agotado' : 'Añadir al carrito'}
+        </button>
+
+        <p class="text-xs text-stone-400 text-center mt-3">Envío gratis a partir de 50€ en España</p>
+
+        <!-- Info adicional -->
+        <div class="mt-8 border-t border-stone-200 pt-8 space-y-3">
+          <details class="group">
+            <summary class="flex justify-between items-center cursor-pointer text-sm font-medium text-stone-700 py-2">
+              Materiales y cuidados
+              <span class="group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <p class="text-sm text-stone-500 mt-2 pb-2">
+              Fabricado artesanalmente con arcilla polimérica de alta calidad. Evitar el contacto con agua prolongado y productos químicos. Guardar en lugar seco.
+            </p>
+          </details>
+          <details class="group">
+            <summary class="flex justify-between items-center cursor-pointer text-sm font-medium text-stone-700 py-2">
+              Envíos y devoluciones
+              <span class="group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <p class="text-sm text-stone-500 mt-2 pb-2">
+              Envío en 2-4 días hábiles a España. Devoluciones aceptadas en 14 días desde la recepción en perfecto estado.
+            </p>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- Productos relacionados -->
+    {related && related.length > 0 && (
+      <section class="mt-20">
+        <h2 class="text-2xl font-bold text-stone-900 mb-8">También te puede gustar</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {related.map(p => (
+            <a href={`/tienda/${p.slug}`} class="group block">
+              <div class="aspect-square rounded-xl overflow-hidden bg-stone-100 mb-3">
+                <img src={p.images?.[0] || '/placeholder.jpg'} alt={p.name} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              </div>
+              <h3 class="font-medium text-stone-800 group-hover:text-amber-700 transition-colors text-sm">{p.name}</h3>
+              <p class="font-bold text-stone-900 text-sm mt-1">{p.price.toFixed(2)}€</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </div>
+
+  <script>
+    // Galería de imágenes
+    document.querySelectorAll('.thumbnail-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const src = (btn as HTMLElement).dataset.src;
+        const mainImg = document.getElementById('main-image') as HTMLImageElement;
+        if (mainImg && src) mainImg.src = src;
+      });
+    });
+
+    // Añadir al carrito
+    document.getElementById('add-to-cart')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const productData = JSON.parse(btn.dataset.product || '{}');
+
+      const cart = JSON.parse(localStorage.getItem('atlas_cart') || '[]');
+      const existing = cart.find((item: any) => item.id === productData.id);
+
+      if (existing) {
+        if (existing.quantity < productData.stock) {
+          existing.quantity++;
+        }
+      } else {
+        cart.push({ ...productData, quantity: 1 });
+      }
+
+      localStorage.setItem('atlas_cart', JSON.stringify(cart));
+      window.dispatchEvent(new Event('cart-updated'));
+
+      // Feedback visual
+      btn.textContent = '✓ Añadido al carrito';
+      btn.classList.add('bg-green-700');
+      setTimeout(() => {
+        btn.textContent = 'Añadir al carrito';
+        btn.classList.remove('bg-green-700');
+      }, 2000);
+    });
+  </script>
+</StoreLayout>

@@ -1,0 +1,82 @@
+---
+import '../../../styles/global.css';
+
+// Si ya está logado, redirigir al dashboard
+const cookie = Astro.request.headers.get('cookie') || '';
+if (cookie.includes('sb-access-token')) {
+  return Astro.redirect('/admin');
+}
+---
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Atlas&You</title>
+</head>
+<body class="bg-stone-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div class="text-center mb-8">
+      <h1 class="text-2xl font-bold text-stone-900">Atlas<span class="text-amber-700">&You</span></h1>
+      <p class="text-stone-500 text-sm mt-1">Panel de administración</p>
+    </div>
+
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1">Email</label>
+        <input
+          type="email"
+          id="email"
+          required
+          class="w-full border border-stone-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+          placeholder="admin@atlasandyou.es"
+        />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-stone-700 mb-1">Contraseña</label>
+        <input
+          type="password"
+          id="password"
+          required
+          class="w-full border border-stone-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+        />
+      </div>
+
+      <p id="error-msg" class="text-red-500 text-sm hidden"></p>
+
+      <button
+        type="submit"
+        class="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 rounded-xl transition-colors"
+      >
+        Entrar
+      </button>
+    </form>
+  </div>
+
+  <script>
+    import { createClient } from '@supabase/supabase-js';
+
+    const supabase = createClient(
+      (import.meta as any).env.PUBLIC_SUPABASE_URL,
+      (import.meta as any).env.PUBLIC_SUPABASE_ANON_KEY
+    );
+
+    document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = (document.getElementById('email') as HTMLInputElement).value;
+      const password = (document.getElementById('password') as HTMLInputElement).value;
+      const errorEl = document.getElementById('error-msg')!;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        errorEl.textContent = 'Email o contraseña incorrectos';
+        errorEl.classList.remove('hidden');
+      } else {
+        window.location.href = '/admin';
+      }
+    });
+  </script>
+</body>
+</html>

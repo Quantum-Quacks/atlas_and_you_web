@@ -1,0 +1,93 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import StockBadge from '../../../components/admin/StockBadge.astro';
+import { supabaseAdmin } from '../../../lib/supabase';
+import { requireAdmin } from '../../../lib/auth';
+
+const user = await requireAdmin(Astro.request);
+if (user instanceof Response) return user;
+
+const { data: products } = await supabaseAdmin
+  .from('products')
+  .select('*, categories(name)')
+  .order('created_at', { ascending: false });
+---
+
+<AdminLayout title="Productos — Atlas&You" currentPage="productos">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-xl font-bold text-stone-800">Productos</h2>
+      <p class="text-stone-400 text-sm">{products?.length || 0} productos en total</p>
+    </div>
+    <a
+      href="/admin/productos/nuevo"
+      class="bg-amber-700 hover:bg-amber-800 text-white font-medium px-5 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+      </svg>
+      Nuevo producto
+    </a>
+  </div>
+
+  <div class="bg-white rounded-xl border border-stone-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-stone-50 text-stone-500 text-xs uppercase">
+          <tr>
+            <th class="px-6 py-3 text-left font-medium">Producto</th>
+            <th class="px-6 py-3 text-left font-medium">Categoría</th>
+            <th class="px-6 py-3 text-left font-medium">Precio</th>
+            <th class="px-6 py-3 text-left font-medium">Stock</th>
+            <th class="px-6 py-3 text-left font-medium">Estado</th>
+            <th class="px-6 py-3 text-left font-medium">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-100">
+          {products?.map(product => (
+            <tr class="hover:bg-stone-50 transition-colors">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-12 rounded-lg overflow-hidden bg-stone-100 flex-shrink-0">
+                    {product.images?.[0] && (
+                      <img src={product.images[0]} alt={product.name} class="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div>
+                    <p class="font-medium text-stone-800">{product.name}</p>
+                    <p class="text-stone-400 text-xs">{product.sku || '—'}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-stone-500">{(product as any).categories?.name || '—'}</td>
+              <td class="px-6 py-4 font-medium text-stone-900">{product.price.toFixed(2)}€</td>
+              <td class="px-6 py-4"><StockBadge stock={product.stock} /></td>
+              <td class="px-6 py-4">
+                <span class={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${product.active ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-600'}`}>
+                  {product.active ? 'Activo' : 'Inactivo'}
+                </span>
+                {product.featured && (
+                  <span class="ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    Destacado
+                  </span>
+                )}
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-2">
+                  <a href={`/admin/productos/${product.id}`} class="text-amber-700 hover:text-amber-800 text-xs font-medium">Editar</a>
+                  <a href={`/tienda/${product.slug}`} target="_blank" class="text-stone-400 hover:text-stone-600 text-xs">Ver →</a>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {(!products || products.length === 0) && (
+        <div class="text-center py-16 text-stone-400">
+          <p class="text-lg font-medium mb-2">No hay productos</p>
+          <a href="/admin/productos/nuevo" class="text-amber-700 hover:text-amber-800 text-sm font-medium">Crear el primer producto →</a>
+        </div>
+      )}
+    </div>
+  </div>
+</AdminLayout>
