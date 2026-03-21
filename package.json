@@ -13,11 +13,12 @@
   },
   "dependencies": {
     "@astrojs/node": "^10.0.3",
-    "@supabase/supabase-js": "^2.99.3",
     "@tailwindcss/vite": "^4.2.2",
     "astro": "^6.0.8",
     "cloudinary": "^2.9.0",
     "date-fns": "^4.1.0",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
     "resend": "^6.9.4",
     "stripe": "^20.4.1",
     "tailwindcss": "^4.2.2",

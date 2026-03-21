@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
@@ -8,11 +8,39 @@ if (user instanceof Response) return user;
 
 const { id } = Astro.params;
 
-const { data: order } = await supabaseAdmin
-  .from('orders')
-  .select('*, order_items(*)')
-  .eq('id', id)
-  .single();
+let order: any = null;
+if (IS_MOCK) {
+  order = {
+    id: id || 'mock1',
+    order_number: 'AY-001',
+    status: 'paid',
+    payment_status: 'paid',
+    customer_name: 'María García',
+    customer_email: 'maria@ejemplo.es',
+    customer_phone: '+34 600 000 000',
+    subtotal: 34.00,
+    discount_amount: 0,
+    shipping_cost: 3.50,
+    tax_amount: 6.17,
+    total: 37.50,
+    shipping_carrier: null,
+    tracking_number: null,
+    tracking_url: null,
+    notes: null,
+    discount_code: null,
+    shipping_address: { name: 'María García', street: 'Calle Mayor 1', city: 'Madrid', postal_code: '28001', province: 'Madrid', country: 'ES' },
+    order_items: [
+      { name: 'Pendientes Floral Rosa Pastel', quantity: 1, unit_price: 18.00, total: 18.00 },
+      { name: 'Colgante Hoja Verde', quantity: 1, unit_price: 16.00, total: 16.00 },
+    ],
+    created_at: new Date(),
+  };
+} else {
+  const db = getDb();
+  const doc = await db.collection('orders').doc(id!).get();
+  if (!doc.exists) return Astro.redirect('/admin/pedidos');
+  order = { id: doc.id, ...doc.data() };
+}
 
 if (!order) return Astro.redirect('/admin/pedidos');
 

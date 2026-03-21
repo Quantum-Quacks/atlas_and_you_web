@@ -1,6 +1,6 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
@@ -8,14 +8,19 @@ if (user instanceof Response) return user;
 
 const statusFilter = Astro.url.searchParams.get('status') || '';
 
-let query = supabaseAdmin
-  .from('orders')
-  .select('*')
-  .order('created_at', { ascending: false });
-
-if (statusFilter) query = query.eq('status', statusFilter);
-
-const { data: orders } = await query;
+let orders: any[] = [];
+if (IS_MOCK) {
+  orders = [
+    { id: 'mock1', order_number: 'AY-001', customer_name: 'María García', customer_email: 'maria@ejemplo.es', total: 34.00, status: 'paid', created_at: new Date() },
+    { id: 'mock2', order_number: 'AY-002', customer_name: 'Laura Martínez', customer_email: 'laura@ejemplo.es', total: 52.00, status: 'shipped', created_at: new Date(Date.now() - 86400000) },
+  ];
+  if (statusFilter) orders = orders.filter(o => o.status === statusFilter);
+} else {
+  const db = getDb();
+  const snap = await db.collection('orders').orderBy('created_at', 'desc').get();
+  orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if (statusFilter) orders = orders.filter((o: any) => o.status === statusFilter);
+}
 
 const statusColors: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -92,7 +97,7 @@ const filters = [
                 </span>
               </td>
               <td class="px-6 py-4 text-stone-400 text-xs">
-                {new Date(order.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                {new Date(order.created_at?.toDate?.() || order.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
               </td>
               <td class="px-6 py-4">
                 <a href={`/admin/pedidos/${order.id}`} class="text-amber-700 hover:text-amber-800 text-xs font-medium">Ver detalles →</a>

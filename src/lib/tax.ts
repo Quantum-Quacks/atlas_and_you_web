@@ -1,25 +1,19 @@
-import { supabaseAdmin } from './supabase';
+import { getDb, IS_MOCK } from './firebase-admin';
 
-// IVA estándar España
 const DEFAULT_TAX_RATE = 0.21;
 
 export async function getTaxRate(country: string): Promise<number> {
-  const { data } = await supabaseAdmin
-    .from('tax_rates')
-    .select('rate_percentage')
-    .eq('country', country)
-    .single();
+  if (IS_MOCK) return DEFAULT_TAX_RATE;
 
-  if (data) return data.rate_percentage / 100;
+  const db = getDb();
+  const snap = await db.collection('tax_rates').where('country', '==', country).limit(1).get();
 
-  // Si no hay tasa específica, aplicar España por defecto
+  if (!snap.empty) {
+    return snap.docs[0].data().rate_percentage / 100;
+  }
   return DEFAULT_TAX_RATE;
 }
 
 export function calculateTax(subtotal: number, taxRate: number): number {
   return Math.round(subtotal * taxRate * 100) / 100;
-}
-
-export function calculatePriceWithoutTax(priceWithTax: number, taxRate: number): number {
-  return Math.round((priceWithTax / (1 + taxRate)) * 100) / 100;
 }

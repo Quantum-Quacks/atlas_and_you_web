@@ -1,15 +1,19 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-const { data: taxRates } = await supabaseAdmin
-  .from('tax_rates')
-  .select('*')
-  .order('country');
+let taxRates: any[] = [];
+if (IS_MOCK) {
+  taxRates = [{ id: 'es', name: 'IVA España (21%)', country: 'ES', rate_percentage: 21 }];
+} else {
+  const db = getDb();
+  const snap = await db.collection('tax_rates').orderBy('country').get();
+  taxRates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 ---
 
 <AdminLayout title="Impuestos — Atlas&You" currentPage="impuestos">

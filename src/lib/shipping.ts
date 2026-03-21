@@ -1,4 +1,6 @@
-import { supabaseAdmin } from './supabase';
+import { getDb } from './firebase-admin';
+import { mockShippingRates } from './mock-data';
+import { IS_MOCK } from './firebase-admin';
 
 export interface ShippingRate {
   id: string;
@@ -15,35 +17,41 @@ export async function calculateShipping(
   orderTotal: number,
   weightGrams: number
 ): Promise<ShippingRate[]> {
-  // Buscar zona para el país
-  const { data: zones } = await supabaseAdmin
-    .from('shipping_zones')
-    .select('id, name, countries');
+  if (IS_MOCK) return mockShippingRates;
 
-  if (!zones) return [];
+  const db = getDb();
 
-  const zone = zones.find(z => z.countries.includes(country));
+  // Buscar zona que incluya el país
+  const zonesSnap = await db.collection('shipping_zones').get();
+  const zone = zonesSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .find((z: any) => z.countries?.includes(country));
+
   if (!zone) return [];
 
-  // Buscar tarifas aplicables
-  const { data: rates } = await supabaseAdmin
-    .from('shipping_rates')
-    .select('*')
-    .eq('zone_id', zone.id)
-    .or(`min_weight_g.lte.${weightGrams},min_weight_g.is.null`)
-    .or(`max_weight_g.gte.${weightGrams},max_weight_g.is.null`)
-    .or(`min_order_price.lte.${orderTotal},min_order_price.is.null`)
-    .or(`max_order_price.gte.${orderTotal},max_order_price.is.null`);
+  // Buscar tarifas de esa zona
+  const ratesSnap = await db
+    .collection('shipping_rates')
+    .where('zone_id', '==', zone.id)
+    .get();
 
-  if (!rates) return [];
+  const rates = ratesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
 
-  return rates.map(rate => ({
-    id: rate.id,
-    carrier: rate.carrier,
-    name: rate.name,
-    description: rate.description,
-    rate: rate.free_from_amount && orderTotal >= rate.free_from_amount ? 0 : rate.rate,
-    estimated_days: rate.estimated_days,
-    free_from_amount: rate.free_from_amount,
-  }));
+  return rates
+    .filter(rate => {
+      const weightOk = (!rate.min_weight_g || weightGrams >= rate.min_weight_g) &&
+                       (!rate.max_weight_g || weightGrams <= rate.max_weight_g);
+      const priceOk  = (!rate.min_order_price || orderTotal >= rate.min_order_price) &&
+                       (!rate.max_order_price || orderTotal <= rate.max_order_price);
+      return weightOk && priceOk;
+    })
+    .map(rate => ({
+      id: rate.id,
+      carrier: rate.carrier,
+      name: rate.name,
+      description: rate.description || '',
+      rate: rate.free_from_amount && orderTotal >= rate.free_from_amount ? 0 : rate.rate,
+      estimated_days: rate.estimated_days || '',
+      free_from_amount: rate.free_from_amount || null,
+    }));
 }

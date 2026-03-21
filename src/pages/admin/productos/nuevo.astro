@@ -1,12 +1,20 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
+import { mockCategories } from '../../../lib/mock-data';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-const { data: categories } = await supabaseAdmin.from('categories').select('id, name').eq('active', true).order('name');
+let categories: any[] = [];
+if (IS_MOCK) {
+  categories = mockCategories;
+} else {
+  const db = getDb();
+  const snap = await db.collection('categories').where('active', '==', true).orderBy('name').get();
+  categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 ---
 
 <AdminLayout title="Nuevo producto — Atlas&You" currentPage="productos">

@@ -1,69 +1,71 @@
 ---
 import StoreLayout from '../../layouts/StoreLayout.astro';
 import ProductCard from '../../components/storefront/ProductCard.astro';
-import { supabase } from '../../lib/supabase';
+import { getDb, IS_MOCK } from '../../lib/firebase-admin';
+import { mockProducts, mockCategories } from '../../lib/mock-data';
 
 const categoria = Astro.url.searchParams.get('categoria');
 const busqueda = Astro.url.searchParams.get('q');
 
-let query = supabase
-  .from('products')
-  .select('*, categories(name, slug)')
-  .eq('active', true)
-  .order('created_at', { ascending: false });
+let products: any[] = [];
+let categories: any[] = [];
 
-if (categoria) {
-  const { data: cat } = await supabase.from('categories').select('id').eq('slug', categoria).single();
-  if (cat) query = query.eq('category_id', cat.id);
+if (IS_MOCK) {
+  categories = mockCategories;
+  products = mockProducts.filter(p => p.active);
+  if (categoria) {
+    const cat = mockCategories.find(c => c.slug === categoria);
+    if (cat) products = products.filter(p => p.category_id === cat.id);
+  }
+  if (busqueda) {
+    products = products.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()));
+  }
+} else {
+  const db = getDb();
+  const [catSnap] = await Promise.all([
+    db.collection('categories').where('active', '==', true).orderBy('position').get(),
+  ]);
+  categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  let query: any = db.collection('products').where('active', '==', true);
+  if (categoria) {
+    const cat = categories.find((c: any) => c.slug === categoria);
+    if (cat) query = query.where('category_id', '==', cat.id);
+  }
+  const prodSnap = await query.orderBy('created_at', 'desc').get();
+  products = prodSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+  if (busqueda) {
+    products = products.filter(p => p.name.toLowerCase().includes(busqueda.toLowerCase()));
+  }
 }
-
-if (busqueda) {
-  query = query.ilike('name', `%${busqueda}%`);
-}
-
-const { data: products } = await query;
-
-const { data: categories } = await supabase
-  .from('categories')
-  .select('*')
-  .eq('active', true)
-  .order('position');
 
 const pageTitle = categoria
-  ? `${categories?.find(c => c.slug === categoria)?.name || categoria} — Atlas&You`
+  ? `${categories.find((c: any) => c.slug === categoria)?.name || categoria} — Atlas&You`
   : 'Tienda — Atlas&You';
 ---
 
 <StoreLayout title={pageTitle}>
   <div class="max-w-6xl mx-auto px-4 py-10">
-    <!-- Header -->
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-stone-900">
-        {categoria ? categories?.find(c => c.slug === categoria)?.name || categoria : 'Toda la colección'}
+        {categoria ? categories.find((c: any) => c.slug === categoria)?.name || categoria : 'Toda la colección'}
       </h1>
-      <p class="text-stone-500 mt-1">{products?.length || 0} piezas</p>
+      <p class="text-stone-500 mt-1">{products.length} piezas</p>
     </div>
 
     <div class="flex flex-col md:flex-row gap-8">
-      <!-- Filtros -->
       <aside class="md:w-56 flex-shrink-0">
         <div class="bg-white rounded-xl p-5 border border-stone-200">
           <h3 class="font-semibold text-stone-800 mb-4">Categorías</h3>
           <ul class="space-y-2">
             <li>
-              <a
-                href="/tienda"
-                class={`block text-sm px-2 py-1.5 rounded-lg transition-colors ${!categoria ? 'bg-amber-100 text-amber-800 font-medium' : 'text-stone-600 hover:text-amber-700'}`}
-              >
+              <a href="/tienda" class={`block text-sm px-2 py-1.5 rounded-lg transition-colors ${!categoria ? 'bg-amber-100 text-amber-800 font-medium' : 'text-stone-600 hover:text-amber-700'}`}>
                 Todos los productos
               </a>
             </li>
-            {categories?.map(cat => (
+            {categories.map((cat: any) => (
               <li>
-                <a
-                  href={`/tienda?categoria=${cat.slug}`}
-                  class={`block text-sm px-2 py-1.5 rounded-lg transition-colors ${categoria === cat.slug ? 'bg-amber-100 text-amber-800 font-medium' : 'text-stone-600 hover:text-amber-700'}`}
-                >
+                <a href={`/tienda?categoria=${cat.slug}`} class={`block text-sm px-2 py-1.5 rounded-lg transition-colors ${categoria === cat.slug ? 'bg-amber-100 text-amber-800 font-medium' : 'text-stone-600 hover:text-amber-700'}`}>
                   {cat.name}
                 </a>
               </li>
@@ -72,34 +74,23 @@ const pageTitle = categoria
         </div>
       </aside>
 
-      <!-- Grid de productos -->
       <div class="flex-1">
-        {/* Buscador */}
         <form method="get" action="/tienda" class="mb-6">
           {categoria && <input type="hidden" name="categoria" value={categoria} />}
           <div class="relative">
-            <input
-              type="text"
-              name="q"
-              value={busqueda || ''}
-              placeholder="Buscar joyas..."
-              class="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-            />
+            <input type="text" name="q" value={busqueda || ''} placeholder="Buscar joyas..." class="w-full pl-10 pr-4 py-2.5 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" />
             <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
         </form>
 
-        {products && products.length > 0 ? (
+        {products.length > 0 ? (
           <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {products.map(product => <ProductCard product={product} />)}
+            {products.map((product: any) => <ProductCard product={product} />)}
           </div>
         ) : (
           <div class="text-center py-20 text-stone-400">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
             <p class="text-lg font-medium">No hay productos disponibles</p>
             <p class="text-sm mt-1">Prueba con otra categoría o búsqueda</p>
           </div>

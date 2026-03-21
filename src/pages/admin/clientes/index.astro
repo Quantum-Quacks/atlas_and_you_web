@@ -1,26 +1,34 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-// Clientes únicos agrupados por email con stats de pedidos
-const { data: customers } = await supabaseAdmin
-  .from('orders')
-  .select('customer_email, customer_name, customer_phone, total, created_at')
-  .eq('payment_status', 'paid')
-  .order('created_at', { ascending: false });
+let rawOrders: any[] = [];
+if (IS_MOCK) {
+  rawOrders = [
+    { customer_email: 'maria@ejemplo.es', customer_name: 'María García', customer_phone: '+34 600 000 000', total: 37.50, created_at: new Date() },
+    { customer_email: 'laura@ejemplo.es', customer_name: 'Laura Martínez', customer_phone: null, total: 52.00, created_at: new Date(Date.now() - 86400000) },
+    { customer_email: 'maria@ejemplo.es', customer_name: 'María García', customer_phone: '+34 600 000 000', total: 18.00, created_at: new Date(Date.now() - 172800000) },
+  ];
+} else {
+  const db = getDb();
+  const snap = await db.collection('orders').where('payment_status', '==', 'paid').orderBy('created_at', 'desc').get();
+  rawOrders = snap.docs.map(d => d.data());
+}
 
 // Agrupar por email
 const customerMap = new Map<string, any>();
-customers?.forEach(order => {
+rawOrders.forEach(order => {
   const existing = customerMap.get(order.customer_email);
   if (existing) {
     existing.total_orders++;
     existing.total_spent += order.total;
-    if (new Date(order.created_at) > new Date(existing.last_order)) {
+    const orderDate = order.created_at?.toDate?.() || new Date(order.created_at);
+    const existingDate = existing.last_order?.toDate?.() || new Date(existing.last_order);
+    if (orderDate > existingDate) {
       existing.last_order = order.created_at;
     }
   } else {
@@ -67,7 +75,7 @@ const uniqueCustomers = Array.from(customerMap.values())
               <td class="px-6 py-4 text-stone-700">{customer.total_orders}</td>
               <td class="px-6 py-4 font-bold text-stone-900">{customer.total_spent.toFixed(2)}€</td>
               <td class="px-6 py-4 text-stone-400 text-xs">
-                {new Date(customer.last_order).toLocaleDateString('es-ES')}
+                {new Date(customer.last_order?.toDate?.() || customer.last_order).toLocaleDateString('es-ES')}
               </td>
               <td class="px-6 py-4">
                 <a

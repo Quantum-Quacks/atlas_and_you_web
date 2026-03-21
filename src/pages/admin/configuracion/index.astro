@@ -1,17 +1,23 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-const { data: settings } = await supabaseAdmin
-  .from('settings')
-  .select('key, value');
-
 const s: Record<string, string> = {};
-settings?.forEach(row => s[row.key] = row.value);
+if (IS_MOCK) {
+  s.store_name = 'Atlas&You';
+  s.store_email = 'hola@atlasandyou.es';
+  s.free_shipping_threshold = '50';
+  s.low_stock_threshold = '3';
+  s.store_description = 'Joyería artesanal única hecha con arcilla polimérica y resina.';
+} else {
+  const db = getDb();
+  const snap = await db.collection('settings').get();
+  snap.docs.forEach(doc => { s[doc.id] = doc.data().value; });
+}
 ---
 
 <AdminLayout title="Configuración — Atlas&You" currentPage="configuracion">

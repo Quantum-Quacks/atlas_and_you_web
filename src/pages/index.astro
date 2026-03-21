@@ -1,21 +1,24 @@
 ---
 import StoreLayout from '../layouts/StoreLayout.astro';
 import ProductCard from '../components/storefront/ProductCard.astro';
-import { supabase } from '../lib/supabase';
+import { getDb, IS_MOCK } from '../lib/firebase-admin';
+import { mockProducts, mockCategories } from '../lib/mock-data';
 
-const { data: featured } = await supabase
-  .from('products')
-  .select('*')
-  .eq('featured', true)
-  .eq('active', true)
-  .order('created_at', { ascending: false })
-  .limit(8);
+let featured: any[] = [];
+let categories: any[] = [];
 
-const { data: categories } = await supabase
-  .from('categories')
-  .select('*')
-  .eq('active', true)
-  .order('position');
+if (IS_MOCK) {
+  featured = mockProducts.filter(p => p.featured);
+  categories = mockCategories;
+} else {
+  const db = getDb();
+  const [featSnap, catSnap] = await Promise.all([
+    db.collection('products').where('active', '==', true).where('featured', '==', true).limit(8).get(),
+    db.collection('categories').where('active', '==', true).orderBy('position').get(),
+  ]);
+  featured = featSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  categories = catSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 ---
 
 <StoreLayout>
@@ -35,7 +38,7 @@ const { data: categories } = await supabase
           <a href="/tienda" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-8 py-3 rounded-full transition-colors">
             Explorar tienda
           </a>
-          <a href="/tienda?destacados=true" class="border border-white/30 hover:border-white text-white font-semibold px-8 py-3 rounded-full transition-colors">
+          <a href="/tienda" class="border border-white/30 hover:border-white text-white font-semibold px-8 py-3 rounded-full transition-colors">
             Ver novedades
           </a>
         </div>
@@ -44,16 +47,16 @@ const { data: categories } = await supabase
   </section>
 
   <!-- Categorías -->
-  {categories && categories.length > 0 && (
+  {categories.length > 0 && (
     <section class="max-w-6xl mx-auto px-4 py-16">
       <h2 class="text-2xl font-bold text-stone-900 mb-8">Colecciones</h2>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {categories.map(cat => (
-          <a href={`/tienda?categoria=${cat.slug}`} class="group relative overflow-hidden rounded-2xl aspect-square bg-stone-200">
+        {categories.map((cat: any) => (
+          <a href={`/tienda?categoria=${cat.slug}`} class="group relative overflow-hidden rounded-2xl aspect-square bg-gradient-to-br from-amber-100 to-stone-200 flex items-end">
             {cat.image_url && (
-              <img src={cat.image_url} alt={cat.name} class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <img src={cat.image_url} alt={cat.name} class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             )}
-            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+            <div class="relative w-full bg-gradient-to-t from-black/60 to-transparent p-4">
               <span class="text-white font-bold text-lg">{cat.name}</span>
             </div>
           </a>
@@ -63,14 +66,14 @@ const { data: categories } = await supabase
   )}
 
   <!-- Productos destacados -->
-  {featured && featured.length > 0 && (
+  {featured.length > 0 && (
     <section class="max-w-6xl mx-auto px-4 py-8 pb-16">
       <div class="flex items-center justify-between mb-8">
         <h2 class="text-2xl font-bold text-stone-900">Piezas destacadas</h2>
         <a href="/tienda" class="text-amber-700 hover:text-amber-800 font-medium text-sm">Ver todo →</a>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {featured.map(product => <ProductCard product={product} />)}
+        {featured.map((product: any) => <ProductCard product={product} />)}
       </div>
     </section>
   )}

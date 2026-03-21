@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { supabaseAdmin } from '../../../../../lib/supabase';
+import { getDb } from '../../../../../lib/firebase-admin';
 
 export const DELETE: APIRoute = async ({ params }) => {
-  await supabaseAdmin.from('shipping_rates').delete().eq('id', params.id);
+  await getDb().collection('shipping_rates').doc(params.id!).delete();
   return new Response(null, { status: 204 });
 };

@@ -1,15 +1,34 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-const { data: zones } = await supabaseAdmin
-  .from('shipping_zones')
-  .select('*, shipping_rates(*)')
-  .order('name');
+let zones: any[] = [];
+if (IS_MOCK) {
+  zones = [
+    { id: 'zone1', name: 'España', countries: ['ES', 'AD', 'GI'], shipping_rates: [
+      { id: 'r1', carrier: 'Correos', name: 'Estándar', rate: 3.50, free_from_amount: 50, estimated_days: '3-5 días hábiles' },
+      { id: 'r2', carrier: 'MRW', name: 'Express 24h', rate: 6.90, free_from_amount: null, estimated_days: '1 día hábil' },
+    ]},
+    { id: 'zone2', name: 'Europa', countries: ['PT', 'FR', 'DE', 'IT'], shipping_rates: [
+      { id: 'r3', carrier: 'Correos', name: 'Internacional', rate: 8.50, free_from_amount: 80, estimated_days: '7-15 días hábiles' },
+    ]},
+  ];
+} else {
+  const db = getDb();
+  const zonesSnap = await db.collection('shipping_zones').orderBy('name').get();
+  zones = await Promise.all(zonesSnap.docs.map(async d => {
+    const ratesSnap = await db.collection('shipping_rates').where('zone_id', '==', d.id).get();
+    return {
+      id: d.id,
+      ...d.data(),
+      shipping_rates: ratesSnap.docs.map(r => ({ id: r.id, ...r.data() })),
+    };
+  }));
+}
 ---
 
 <AdminLayout title="Envíos — Atlas&You" currentPage="envios">

@@ -1,16 +1,19 @@
-import { supabase } from './supabase';
+import { getAdminAuth, IS_MOCK } from './firebase-admin';
 
 export async function getSession(request: Request) {
+  if (IS_MOCK) return { uid: 'mock-admin', email: 'admin@atlasandyou.es' };
+
   const cookie = request.headers.get('cookie') || '';
-  const accessToken = parseCookie(cookie, 'sb-access-token');
-  const refreshToken = parseCookie(cookie, 'sb-refresh-token');
+  const sessionCookie = parseCookie(cookie, 'fb_session');
+  if (!sessionCookie) return null;
 
-  if (!accessToken) return null;
-
-  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-  if (error || !user) return null;
-
-  return user;
+  try {
+    const adminAuth = getAdminAuth();
+    const decoded = await adminAuth.verifySessionCookie(sessionCookie, true);
+    return decoded;
+  } catch {
+    return null;
+  }
 }
 
 export async function requireAdmin(request: Request) {

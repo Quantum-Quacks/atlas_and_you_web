@@ -1,15 +1,22 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-const { data: discounts } = await supabaseAdmin
-  .from('discount_codes')
-  .select('*')
-  .order('created_at', { ascending: false });
+let discounts: any[] = [];
+if (IS_MOCK) {
+  discounts = [
+    { id: 'd1', code: 'BIENVENIDA10', type: 'percentage', value: 10, min_order_amount: null, used_count: 0, max_uses: null, valid_until: null, active: true },
+    { id: 'd2', code: 'ENVIOGRATIS', type: 'free_shipping', value: 0, min_order_amount: 30, used_count: 3, max_uses: null, valid_until: null, active: true },
+  ];
+} else {
+  const db = getDb();
+  const snap = await db.collection('discount_codes').orderBy('created_at', 'desc').get();
+  discounts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 ---
 
 <AdminLayout title="Descuentos — Atlas&You" currentPage="descuentos">

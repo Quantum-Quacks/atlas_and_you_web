@@ -1,16 +1,28 @@
 ---
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import StockBadge from '../../../components/admin/StockBadge.astro';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb, IS_MOCK } from '../../../lib/firebase-admin';
 import { requireAdmin } from '../../../lib/auth';
+import { mockProducts, mockCategories } from '../../../lib/mock-data';
 
 const user = await requireAdmin(Astro.request);
 if (user instanceof Response) return user;
 
-const { data: products } = await supabaseAdmin
-  .from('products')
-  .select('*, categories(name)')
-  .order('created_at', { ascending: false });
+let products: any[] = [];
+let categoryMap: Record<string, string> = {};
+
+if (IS_MOCK) {
+  products = mockProducts;
+  categoryMap = Object.fromEntries(mockCategories.map(c => [c.id, c.name]));
+} else {
+  const db = getDb();
+  const [prodSnap, catSnap] = await Promise.all([
+    db.collection('products').orderBy('created_at', 'desc').get(),
+    db.collection('categories').get(),
+  ]);
+  catSnap.docs.forEach(d => { categoryMap[d.id] = (d.data() as any).name; });
+  products = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 ---
 
 <AdminLayout title="Productos — Atlas&You" currentPage="productos">
@@ -59,7 +71,7 @@ const { data: products } = await supabaseAdmin
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4 text-stone-500">{(product as any).categories?.name || '—'}</td>
+              <td class="px-6 py-4 text-stone-500">{categoryMap[product.category_id] || '—'}</td>
               <td class="px-6 py-4 font-medium text-stone-900">{product.price.toFixed(2)}€</td>
               <td class="px-6 py-4"><StockBadge stock={product.stock} /></td>
               <td class="px-6 py-4">

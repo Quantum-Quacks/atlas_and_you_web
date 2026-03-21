@@ -1,94 +1,76 @@
 import type { APIRoute } from 'astro';
 import { stripe } from '../../../lib/stripe';
-import { supabaseAdmin } from '../../../lib/supabase';
+import { getDb } from '../../../lib/firebase-admin';
 import { sendOrderConfirmation, sendAdminNewOrder, sendLowStockAlert } from '../../../lib/email';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
-
-  if (!signature) {
-    return new Response('Missing signature', { status: 400 });
-  }
+  if (!signature) return new Response('Missing signature', { status: 400 });
 
   let event;
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      import.meta.env.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(body, signature, import.meta.env.STRIPE_WEBHOOK_SECRET);
   } catch (err: any) {
-    console.error('Webhook signature error:', err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
+
+  const db = getDb();
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any;
     const orderId = session.metadata?.order_id;
-
     if (!orderId) return new Response('OK', { status: 200 });
 
-    // Actualizar estado del pedido
-    const { data: order } = await supabaseAdmin
-      .from('orders')
-      .update({
-        status: 'paid',
-        payment_status: 'paid',
-        stripe_payment_intent: session.payment_intent,
-      })
-      .eq('id', orderId)
-      .select('*, order_items(*)')
-      .single();
+    const orderRef = db.collection('orders').doc(orderId);
+    await orderRef.update({
+      status: 'paid',
+      payment_status: 'paid',
+      stripe_payment_intent: session.payment_intent,
+      updated_at: FieldValue.serverTimestamp(),
+    });
 
-    if (!order) return new Response('Order not found', { status: 404 });
+    const orderDoc = await orderRef.get();
+    const order = { id: orderDoc.id, ...orderDoc.data() } as any;
 
-    // Descontar stock de cada producto
-    for (const item of order.order_items) {
-      const { data: product } = await supabaseAdmin
-        .from('products')
-        .select('id, name, stock')
-        .eq('id', item.product_id)
-        .single();
-
-      if (product) {
-        const newStock = Math.max(0, product.stock - item.quantity);
-        await supabaseAdmin
-          .from('products')
-          .update({ stock: newStock })
-          .eq('id', product.id);
+    // Descontar stock por cada item
+    for (const item of order.order_items || []) {
+      const prodRef = db.collection('products').doc(item.product_id);
+      const prodDoc = await prodRef.get();
+      if (prodDoc.exists) {
+        const prod = prodDoc.data() as any;
+        const newStock = Math.max(0, prod.stock - item.quantity);
+        await prodRef.update({ stock: newStock });
 
         // Registrar movimiento de stock
-        await supabaseAdmin.from('stock_movements').insert({
-          product_id: product.id,
+        await db.collection('stock_movements').add({
+          product_id: item.product_id,
           quantity_change: -item.quantity,
           reason: 'sale',
           order_id: orderId,
+          created_at: FieldValue.serverTimestamp(),
         });
 
-        // Alertar si stock bajo
+        // Alerta stock bajo
         if (newStock <= 3) {
-          await sendLowStockAlert({ name: product.name, stock: newStock }).catch(console.error);
+          await sendLowStockAlert({ name: prod.name, stock: newStock }).catch(console.error);
         }
       }
     }
 
-    // Actualizar usos de código de descuento
+    // Incrementar uso de descuento
     if (order.discount_code) {
-      await supabaseAdmin.rpc('increment_discount_usage', { code: order.discount_code });
+      const discSnap = await db.collection('discount_codes').where('code', '==', order.discount_code).limit(1).get();
+      if (!discSnap.empty) {
+        await discSnap.docs[0].ref.update({ used_count: FieldValue.increment(1) });
+      }
     }
 
-    // Enviar emails
-    const emailData = {
-      ...order,
-      customer_name: order.customer_name,
-      customer_email: order.customer_email,
-      items: order.order_items,
-    };
-
+    // Emails
     await Promise.allSettled([
-      sendOrderConfirmation(emailData),
-      sendAdminNewOrder(emailData),
+      sendOrderConfirmation({ ...order, items: order.order_items }),
+      sendAdminNewOrder({ ...order, items: order.order_items }),
     ]);
   }
 
@@ -96,15 +78,15 @@ export const POST: APIRoute = async ({ request }) => {
     const session = event.data.object as any;
     const orderId = session.metadata?.order_id;
     if (orderId) {
-      await supabaseAdmin
-        .from('orders')
-        .update({ status: 'cancelled', payment_status: 'failed' })
-        .eq('id', orderId);
+      await db.collection('orders').doc(orderId).update({
+        status: 'cancelled',
+        payment_status: 'failed',
+        updated_at: FieldValue.serverTimestamp(),
+      });
     }
   }
 
   return new Response(JSON.stringify({ received: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    status: 200, headers: { 'Content-Type': 'application/json' },
   });
 };
