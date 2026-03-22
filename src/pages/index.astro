@@ -23,214 +23,159 @@ if (IS_MOCK) {
 
 <StoreLayout title="Atlas&You — Joyería Artesanal Hecha a Mano">
 
-  <!-- ── HERO ──────────────────────────────────────────────────── -->
-  <section style="background:#2C3B31;position:relative;overflow:hidden;min-height:88vh;display:grid;grid-template-columns:1fr 1fr;" class="hero-section">
+  <!-- ── HERO ─────────────────────────────────────────────────── -->
+  <section style="position:relative;overflow:hidden;min-height:65vh;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <!-- Background image -->
+    <img
+      src="/images/products/peces-turquesa-lifestyle-1.jpg"
+      alt="Atlas&You joyería artesanal"
+      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;"
+    />
+    <!-- Overlay -->
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.48);"></div>
 
-    <!-- Left: text -->
-    <div style="display:flex;align-items:center;padding:80px 64px 80px 32px;position:relative;z-index:1;max-width:720px;margin-left:auto;" class="hero-text">
-      <div>
-        <p style="font-size:11px;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#a8c4b0;margin-bottom:24px;">
-          Joyería Artesanal · Hecha en España
-        </p>
-        <h1 style="font-family:'Trirong',Georgia,serif;font-weight:200;font-size:clamp(2.8rem,5vw,5rem);color:#FAFAF8;line-height:1.08;margin:0 0 28px;letter-spacing:-0.01em;">
-          Joyas que<br/><em style="font-style:italic;font-weight:300;">cuentan historias</em>
-        </h1>
-        <p style="font-size:16px;color:#a8c4b0;line-height:1.7;margin-bottom:40px;max-width:440px;">
-          Pendientes, colgantes y pulseras creados a mano con arcilla polimérica y resina. Cada pieza, única e irrepetible.
-        </p>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-          <a href="/tienda" style="display:inline-flex;align-items:center;gap:8px;background:#FAFAF8;color:#252525;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:14px 32px;text-decoration:none;transition:background 0.2s;" onmouseenter="this.style.background='#e8ede9'" onmouseleave="this.style.background='#FAFAF8'">
-            Ver colección →
-          </a>
-          <a href="#historia" style="font-size:12px;font-weight:400;letter-spacing:0.1em;text-transform:uppercase;color:#a8c4b0;text-decoration:none;" onmouseenter="this.style.color='#FAFAF8'" onmouseleave="this.style.color='#a8c4b0'">
-            Nuestra historia
-          </a>
-        </div>
+    <!-- Content -->
+    <div style="position:relative;z-index:1;text-align:center;padding:60px 32px 40px;">
+      <h1 style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(2.8rem,7vw,5.5rem);color:#fff;margin:0 0 12px;line-height:1.05;letter-spacing:-0.01em;">
+        Joyería Artesanal
+      </h1>
+      <p style="font-size:clamp(14px,2vw,18px);color:rgba(255,255,255,0.8);margin:0 0 40px;font-weight:400;letter-spacing:0.02em;">
+        Hecha a mano en España · Arcilla polimérica y resina
+      </p>
+      <!-- Category links -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;">
+        {[
+          ['PENDIENTES', '/tienda?categoria=pendientes'],
+          ['COLGANTES', '/tienda?categoria=colgantes'],
+          ['PULSERAS', '/tienda?categoria=pulseras'],
+          ['VER TODO', '/tienda'],
+        ].map(([label, href]) => (
+          <a href={href}
+            style="display:inline-flex;align-items:center;padding:10px 22px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;letter-spacing:0.12em;color:#fff;border:1.5px solid rgba(255,255,255,0.7);text-decoration:none;transition:all 0.2s;background:rgba(0,0,0,0.15);"
+            onmouseenter="this.style.background='#2B8080';this.style.borderColor='#2B8080'"
+            onmouseleave="this.style.background='rgba(0,0,0,0.15)';this.style.borderColor='rgba(255,255,255,0.7)'"
+          >{label}</a>
+        ))}
       </div>
-    </div>
-
-    <!-- Right: product lifestyle photo -->
-    <div style="position:relative;overflow:hidden;" class="hero-img-wrap">
-      <img
-        src="/images/products/peces-turquesa-lifestyle-1.jpg"
-        alt="Pendientes artesanales Atlas&You"
-        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;"
-      />
-      <div style="position:absolute;inset:0;background:linear-gradient(to right,#2C3B31 0%,transparent 20%);"></div>
     </div>
   </section>
 
-  <!-- ── VALUES STRIP ─────────────────────────────────────────── -->
-  <div style="background:#FFFFFF;border-bottom:1px solid #DDD8C8;">
-    <div style="max-width:1440px;margin:0 auto;padding:0 32px;">
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);divide-x:1px solid #DDD8C8;">
+  <!-- ── VALUES STRIP ──────────────────────────────────────────── -->
+  <div style="background:#fff;border-bottom:1px solid #e8e8e8;">
+    <div style="max-width:1440px;margin:0 auto;">
+      <div class="values-strip">
         {[
-          ['✦', 'Hecho a mano', 'Cada pieza, única'],
-          ['◈', 'Materiales seguros', 'Hipoalergénicos'],
-          ['⬖', 'Envío gratis', '+50 € en España'],
-          ['◎', 'Devoluciones', '14 días'],
+          ['🤲', 'Hecho a mano', 'Cada pieza, única'],
+          ['✦', 'Sin alérgenos', 'Materiales hipoalergénicos'],
+          ['📦', 'Envío gratis', 'En España desde 50 €'],
+          ['↩', 'Devoluciones', '14 días garantizados'],
         ].map(([icon, label, sub]) => (
-          <div style="padding:18px 24px;text-align:center;border-right:1px solid #DDD8C8;">
-            <span style="font-size:14px;color:#716A56;">{icon}</span>
-            <p style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#252525;margin:4px 0 2px;">{label}</p>
-            <p style="font-size:11px;color:#9E9589;">{sub}</p>
+          <div style="padding:16px 20px;text-align:center;border-right:1px solid #e8e8e8;">
+            <span style="font-size:18px;display:block;margin-bottom:4px;">{icon}</span>
+            <p style="font-size:12px;font-weight:800;color:#1a1a1a;margin:0 0 2px;letter-spacing:0.04em;text-transform:uppercase;">{label}</p>
+            <p style="font-size:11px;color:#888;margin:0;">{sub}</p>
           </div>
         ))}
       </div>
     </div>
   </div>
 
-  <!-- ── COLLECTIONS ──────────────────────────────────────────── -->
-  {categories.length > 0 && (
-    <section style="max-width:1440px;margin:0 auto;padding:80px 32px;">
-      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px;">
-        <div>
-          <p style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#9E9589;margin-bottom:8px;">Explorar</p>
-          <h2 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:clamp(2rem,4vw,3rem);color:#252525;margin:0;">Nuestras colecciones</h2>
-        </div>
-        <a href="/tienda" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#716A56;text-decoration:none;" onmouseenter="this.style.color='#252525'" onmouseleave="this.style.color='#716A56'">Ver todo →</a>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;" class="collections-grid">
-        {categories.slice(0,3).map((cat: any, i: number) => (
-          <a href={`/tienda?categoria=${cat.slug}`} class="collection-tile" style={`display:block;position:relative;overflow:hidden;text-decoration:none;aspect-ratio:${i === 0 ? '3/4' : '4/3'};background:#DDD8C8;`}>
-            {cat.image_url ? (
-              <img src={cat.image_url} alt={cat.name} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 0.7s ease;" class="collection-img"/>
-            ) : (
-              <div style={`position:absolute;inset:0;background:${i===0?'linear-gradient(160deg,#e8ede9,#3F5147)':i===1?'linear-gradient(160deg,#f0ede8,#8B7355)':'linear-gradient(160deg,#e8e6e0,#5a7a63)'};`}></div>
-            )}
-            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(37,37,37,0.55) 0%,transparent 60%);transition:opacity 0.3s;" class="collection-overlay"></div>
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 20px;">
-              <h3 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:1.5rem;color:#FAFAF8;margin:0 0 6px;">{cat.name}</h3>
-              <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(250,250,248,0.7);">Descubrir →</span>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  )}
-
-  <!-- ── FEATURED PRODUCTS ────────────────────────────────────── -->
+  <!-- ── FEATURED PRODUCTS ─────────────────────────────────────── -->
   {featured.length > 0 && (
-    <section style="background:#FAFAF8;padding:80px 0;border-top:1px solid #DDD8C8;border-bottom:1px solid #DDD8C8;">
-      <div style="max-width:1440px;margin:0 auto;padding:0 32px;">
-        <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:40px;">
-          <div>
-            <p style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#9E9589;margin-bottom:8px;">Selección</p>
-            <h2 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:clamp(2rem,4vw,3rem);color:#252525;margin:0;">Piezas destacadas</h2>
-          </div>
-          <a href="/tienda" style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#716A56;text-decoration:none;" onmouseenter="this.style.color='#252525'" onmouseleave="this.style.color='#716A56'">Ver todo →</a>
+    <section style="max-width:1440px;margin:0 auto;padding:56px 24px 64px;">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:32px;">
+        <div>
+          <p style="font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:#2B8080;margin-bottom:6px;">Selección</p>
+          <h2 style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(1.8rem,3.5vw,2.6rem);color:#1a1a1a;margin:0;">Más Vendidos</h2>
         </div>
+        <a href="/tienda"
+          style="font-size:12px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:#2B8080;text-decoration:none;border-bottom:2px solid #2B8080;padding-bottom:2px;"
+          onmouseenter="this.style.color='#1F6666';this.style.borderBottomColor='#1F6666'"
+          onmouseleave="this.style.color='#2B8080';this.style.borderBottomColor='#2B8080'"
+        >Ver todo →</a>
+      </div>
 
-        <div class="products-grid">
-          {featured.map((product: any) => <ProductCard product={product} />)}
+      <div class="products-grid">
+        {featured.map((product: any) => <ProductCard product={product} />)}
+      </div>
+    </section>
+  )}
+
+  <!-- ── COLLECTIONS BANNER ────────────────────────────────────── -->
+  {categories.length > 0 && (
+    <section style="background:#fff;padding:56px 0;border-top:1px solid #e8e8e8;border-bottom:1px solid #e8e8e8;">
+      <div style="max-width:1440px;margin:0 auto;padding:0 24px;">
+        <div style="text-align:center;margin-bottom:36px;">
+          <p style="font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:#2B8080;margin-bottom:8px;">Explorar</p>
+          <h2 style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(1.8rem,3.5vw,2.6rem);color:#1a1a1a;margin:0;">Nuestras Colecciones</h2>
         </div>
-
-        <div style="margin-top:48px;text-align:center;">
-          <a href="/tienda" style="display:inline-flex;align-items:center;gap:8px;border:1px solid #252525;color:#252525;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:13px 36px;text-decoration:none;transition:all 0.2s;" onmouseenter="this.style.background='#252525';this.style.color='#FAFAF8'" onmouseleave="this.style.background='transparent';this.style.color='#252525'">
-            Ver toda la colección
-          </a>
+        <div class="collections-grid">
+          {categories.slice(0,3).map((cat: any, i: number) => (
+            <a href={`/tienda?categoria=${cat.slug}`}
+              style={`display:block;position:relative;overflow:hidden;text-decoration:none;aspect-ratio:${i === 0 ? '3/4' : '4/3'};background:#e8f4f4;`}
+              class="collection-tile"
+            >
+              {cat.image_url ? (
+                <img src={cat.image_url} alt={cat.name} style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 0.6s ease;" class="collection-img"/>
+              ) : (
+                <div style={`position:absolute;inset:0;background:${i===0?'linear-gradient(160deg,#b2d8d8,#1F6666)':i===1?'linear-gradient(160deg,#d4e8e8,#2B8080)':'linear-gradient(160deg,#c8e0e0,#256868)'};`}></div>
+              )}
+              <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.55) 0%,transparent 55%);"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;padding:24px 20px;">
+                <h3 style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:1.5rem;color:#fff;margin:0 0 4px;">{cat.name}</h3>
+                <span style="font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Descubrir →</span>
+              </div>
+            </a>
+          ))}
         </div>
       </div>
     </section>
   )}
 
-  <!-- ── MAKER STORY ──────────────────────────────────────────── -->
-  <section id="historia" style="max-width:1440px;margin:0 auto;padding:80px 32px;">
+  <!-- ── MAKER STORY ───────────────────────────────────────────── -->
+  <section style="max-width:1440px;margin:0 auto;padding:64px 24px;">
     <div class="story-grid">
-
-      <!-- Image -->
       <div style="position:relative;">
-        <div style="aspect-ratio:4/5;background:#DDD8C8;overflow:hidden;">
+        <div style="aspect-ratio:4/5;overflow:hidden;background:#e8f4f4;">
           <img
             src="/images/products/peces-turquesa-modelo-2.jpg"
-            alt="Pendientes peces turquesa — Atlas&You"
+            alt="Atlas&You — joyería hecha a mano"
             style="width:100%;height:100%;object-fit:cover;object-position:center top;"
           />
         </div>
-        <!-- Decorative small square -->
-        <div style="position:absolute;bottom:-16px;right:-16px;width:80px;height:80px;background:#DDD8C8;z-index:-1;"></div>
+        <div style="position:absolute;bottom:-14px;right:-14px;width:70px;height:70px;background:#2B8080;z-index:-1;"></div>
       </div>
-
-      <!-- Text -->
-      <div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 8px;">
-        <p style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#9E9589;margin-bottom:16px;">Sobre Atlas&amp;You</p>
-        <h2 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:clamp(2rem,4vw,3rem);color:#252525;margin:0 0 24px;line-height:1.15;">
+      <div style="display:flex;flex-direction:column;justify-content:center;">
+        <p style="font-size:11px;font-weight:800;letter-spacing:0.15em;text-transform:uppercase;color:#2B8080;margin-bottom:14px;">Sobre Nosotras</p>
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(1.8rem,3.5vw,2.6rem);color:#1a1a1a;margin:0 0 20px;line-height:1.2;">
           Artesanía hecha<br/>con alma
         </h2>
-        <p style="font-size:14px;color:#716A56;line-height:1.75;margin-bottom:16px;">
-          Cada pieza de Atlas&amp;You nace de la pasión por crear algo completamente único. Trabajamos con arcilla polimérica, resina y otros materiales para dar vida a joyas que cuentan historias.
+        <p style="font-size:14px;color:#555;line-height:1.75;margin-bottom:16px;">
+          Cada pieza de Atlas&amp;You nace de la pasión por crear algo completamente único. Trabajamos con arcilla polimérica, resina y pan de oro para dar vida a joyas que cuentan historias.
         </p>
-        <p style="font-size:14px;color:#716A56;line-height:1.75;margin-bottom:32px;">
+        <p style="font-size:14px;color:#555;line-height:1.75;margin-bottom:32px;">
           No hay dos piezas iguales. Lo que tienes en tus manos es completamente irrepetible — como tú.
         </p>
-
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:36px;">
-          {['Modelado a mano, pieza a pieza','Arcilla polimérica de alta calidad','Acabados en resina UV hipoalergénica','Cada joya enviada con cuidado y cariño'].map(item => (
-            <div style="display:flex;align-items:center;gap:10px;">
-              <span style="width:4px;height:4px;border-radius:50%;background:#3F5147;flex-shrink:0;"></span>
-              <span style="font-size:13px;color:#716A56;">{item}</span>
-            </div>
-          ))}
-        </div>
-
-        <a href="/tienda" style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:#3F5147;color:#FAFAF8;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:13px 32px;text-decoration:none;transition:background 0.2s;" onmouseenter="this.style.background='#2C3B31'" onmouseleave="this.style.background='#3F5147'">
-          Descubrir la colección →
-        </a>
+        <a href="/tienda"
+          style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:#2B8080;color:#fff;font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;padding:13px 28px;text-decoration:none;transition:background 0.2s;"
+          onmouseenter="this.style.background='#1F6666'"
+          onmouseleave="this.style.background='#2B8080'"
+        >Descubrir la colección →</a>
       </div>
-    </div>
-  </section>
-
-  <!-- ── MATERIALS DARK SECTION ───────────────────────────────── -->
-  <section style="background:#2C3B31;padding:80px 0;border-top:1px solid #3a4f40;border-bottom:1px solid #3a4f40;">
-    <div style="max-width:1440px;margin:0 auto;padding:0 32px;">
-      <div style="text-align:center;margin-bottom:56px;">
-        <p style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#a8c4b0;margin-bottom:12px;">Los materiales</p>
-        <h2 style="font-family:'Trirong',Georgia,serif;font-weight:200;font-size:clamp(2rem,4vw,3rem);color:#FAFAF8;margin:0;">Hecho para durar</h2>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#3a4f40;" class="materials-grid">
-        {[
-          { t:'Arcilla Polimérica', d:'Resistente, ligera y sin alérgenos. Permite crear formas y texturas imposibles con otros materiales.', i:'◈' },
-          { t:'Resina UV', d:'Acabado brillante o mate con propiedades hipoalergénicas. Protege la pieza y amplifica sus colores.', i:'◉' },
-          { t:'Cierres y bases', d:'Acero inoxidable quirúrgico y plata de ley. Sin níquel, sin irritaciones.', i:'⬡' },
-        ].map(m => (
-          <div style="background:#2C3B31;padding:48px 40px;">
-            <div style="font-size:24px;color:#a8c4b0;margin-bottom:20px;">{m.i}</div>
-            <h3 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:1.4rem;color:#FAFAF8;margin:0 0 12px;">{m.t}</h3>
-            <p style="font-size:13px;color:#8aab94;line-height:1.75;">{m.d}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ── NEWSLETTER ────────────────────────────────────────────── -->
-  <section style="background:#FAFAF8;border-top:1px solid #DDD8C8;padding:80px 32px;text-align:center;">
-    <div style="max-width:480px;margin:0 auto;">
-      <p style="font-size:11px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:#9E9589;margin-bottom:12px;">Novedades</p>
-      <h2 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:clamp(1.8rem,4vw,2.5rem);color:#252525;margin:0 0 16px;">
-        Sé la primera en saberlo
-      </h2>
-      <p style="font-size:14px;color:#716A56;line-height:1.7;margin-bottom:32px;">
-        Nuevas colecciones, piezas de edición limitada y descuentos exclusivos. Sin spam.
-      </p>
-      <form style="display:flex;" onsubmit="return false;">
-        <input type="email" placeholder="tu@email.com" style="flex:1;padding:13px 16px;font-size:14px;border:1px solid #DDD8C8;border-right:none;background:#fff;outline:none;font-family:'Quattrocento Sans',sans-serif;" onfocus="this.style.borderColor='#3F5147'" onblur="this.style.borderColor='#DDD8C8'" />
-        <button type="submit" style="padding:13px 24px;background:#3F5147;color:#FAFAF8;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;border:none;cursor:pointer;font-family:'Quattrocento Sans',sans-serif;white-space:nowrap;" onmouseenter="this.style.background='#2C3B31'" onmouseleave="this.style.background='#3F5147'">
-          Suscribirse
-        </button>
-      </form>
-      <p style="font-size:11px;color:#9E9589;margin-top:12px;">Puedes darte de baja cuando quieras.</p>
     </div>
   </section>
 
 </StoreLayout>
 
 <style>
+  .values-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
   .products-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 16px;
   }
   .collections-grid {
     display: grid;
@@ -240,31 +185,19 @@ if (IS_MOCK) {
   .story-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 80px;
+    gap: 72px;
     align-items: center;
   }
-  .materials-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1px;
-    background: #3a4f40;
-  }
   .collection-tile:hover .collection-img { transform: scale(1.04); }
-  .collection-tile:hover .collection-overlay { opacity: 1.5; }
 
-  .hero-section { min-height: 88vh; }
-  .hero-img-wrap { min-height: 88vh; }
-
-  @media (max-width: 900px) {
-    .hero-section { grid-template-columns: 1fr !important; }
-    .hero-img-wrap { min-height: 50vw; }
-    .hero-text { padding: 60px 32px !important; max-width: 100% !important; margin-left: 0 !important; }
+  @media (max-width: 960px) {
     .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .collections-grid { grid-template-columns: repeat(2, 1fr); }
     .story-grid { grid-template-columns: 1fr; gap: 40px; }
-    .materials-grid { grid-template-columns: 1fr; }
+    .values-strip { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 540px) {
     .collections-grid { grid-template-columns: 1fr; }
+    .values-strip { grid-template-columns: 1fr; }
   }
 </style>

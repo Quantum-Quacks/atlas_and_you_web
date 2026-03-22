@@ -33,76 +33,97 @@ if (IS_MOCK) {
 }
 
 const activeCategory = categories.find((c: any) => c.slug === categoria);
-const pageTitle = activeCategory ? `${activeCategory.name} — Atlas&You` : 'Toda la colección — Atlas&You';
+const pageTitle = activeCategory ? `${activeCategory.name} — Atlas&You` : 'Tienda Online — Atlas&You';
 ---
 
 <StoreLayout title={pageTitle}>
 
-  <!-- Page header (white strip) -->
-  <div style="background:#FFFFFF;border-bottom:1px solid #DDD8C8;">
-    <div style="max-width:1440px;margin:0 auto;padding:40px 32px 32px;">
+  <!-- Hero banner -->
+  <section style="position:relative;overflow:hidden;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <img
+      src="/images/products/peces-turquesa-lifestyle-2.jpg"
+      alt="Tienda Atlas&You"
+      style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 30%;"
+    />
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);"></div>
+    <div style="position:relative;z-index:1;text-align:center;padding:0 24px;">
+      <h1 style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:clamp(2rem,5vw,3.5rem);color:#fff;margin:0 0 20px;line-height:1.05;">
+        {activeCategory ? activeCategory.name : 'Tienda Online'}
+      </h1>
+      <!-- Category pills on hero -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+        {categories.map((cat: any) => (
+          <a href={`/tienda?categoria=${cat.slug}`}
+            style={`display:inline-flex;align-items:center;padding:7px 18px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;transition:all 0.15s;${categoria === cat.slug ? 'background:#2B8080;color:#fff;border:1.5px solid #2B8080;' : 'background:rgba(0,0,0,0.2);color:#fff;border:1.5px solid rgba(255,255,255,0.6);'}`}
+            onmouseenter={`this.style.background='#2B8080';this.style.borderColor='#2B8080'`}
+            onmouseleave={categoria === cat.slug ? '' : `this.style.background='rgba(0,0,0,0.2)';this.style.borderColor='rgba(255,255,255,0.6)'`}
+          >{cat.name}</a>
+        ))}
+      </div>
+    </div>
+  </section>
 
-      <!-- Breadcrumb -->
-      <nav style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#9E9589;margin-bottom:20px;">
-        <a href="/" style="color:#9E9589;text-decoration:none;" onmouseenter="this.style.color='#252525'" onmouseleave="this.style.color='#9E9589'">Inicio</a>
-        <span style="color:#DDD8C8;">/</span>
-        <span style="color:#252525;">{activeCategory ? activeCategory.name : 'Tienda'}</span>
-      </nav>
+  <!-- Controls bar -->
+  <div style="background:#fff;border-bottom:1px solid #e8e8e8;position:sticky;top:0;z-index:20;">
+    <div style="max-width:1440px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
 
-      <!-- Title row -->
-      <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;">
-        <div>
-          <h1 style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:clamp(1.8rem,4vw,2.8rem);color:#252525;margin:0 0 4px;">
-            {activeCategory ? activeCategory.name : 'Toda la colección'}
-          </h1>
-          <p style="font-size:12px;color:#9E9589;">{products.length} {products.length === 1 ? 'pieza' : 'piezas'}</p>
-        </div>
+      <!-- Breadcrumb + count -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        <nav style="font-size:12px;color:#888;">
+          <a href="/" style="color:#888;text-decoration:none;" onmouseenter="this.style.color='#2B8080'" onmouseleave="this.style.color='#888'">Inicio</a>
+          <span style="margin:0 6px;">›</span>
+          {activeCategory ? (
+            <>
+              <a href="/tienda" style="color:#888;text-decoration:none;" onmouseenter="this.style.color='#2B8080'" onmouseleave="this.style.color='#888'">Tienda</a>
+              <span style="margin:0 6px;">›</span>
+              <span style="color:#1a1a1a;font-weight:700;">{activeCategory.name}</span>
+            </>
+          ) : (
+            <span style="color:#1a1a1a;font-weight:700;">Tienda Online</span>
+          )}
+        </nav>
+        <span style="font-size:12px;color:#aaa;">({products.length} {products.length === 1 ? 'pieza' : 'piezas'})</span>
+      </div>
 
-        <!-- Search -->
-        <form method="get" action="/tienda" style="position:relative;width:260px;">
+      <!-- Right side: search + grid toggle -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        <!-- Search inline -->
+        <form method="get" action="/tienda" style="display:flex;border:1px solid #e0e0e0;overflow:hidden;">
           {categoria && <input type="hidden" name="categoria" value={categoria} />}
-          <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#9E9589;" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
           <input
             type="text" name="q" value={busqueda || ''}
             placeholder="Buscar..."
-            style="width:100%;padding:10px 12px 10px 36px;font-size:13px;border:1px solid #DDD8C8;background:#FAFAF8;outline:none;font-family:'Quattrocento Sans',sans-serif;box-sizing:border-box;"
-            onfocus="this.style.borderColor='#3F5147'"
-            onblur="this.style.borderColor='#DDD8C8'"
+            style="padding:7px 12px;font-size:12px;border:none;outline:none;width:180px;font-family:'Nunito',sans-serif;"
           />
+          <button type="submit" style="background:#2B8080;color:#fff;border:none;padding:7px 12px;cursor:pointer;display:flex;align-items:center;">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </button>
         </form>
-      </div>
-
-      <!-- Category pills -->
-      <div style="display:flex;flex-wrap:wrap;gap:8px;">
-        <a href="/tienda" style={`display:inline-flex;align-items:center;padding:7px 16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;transition:all 0.15s;${!categoria ? 'background:#252525;color:#FAFAF8;border:1px solid #252525;' : 'background:transparent;color:#716A56;border:1px solid #DDD8C8;'}`}>
-          Todos
-        </a>
-        {categories.map((cat: any) => (
-          <a href={`/tienda?categoria=${cat.slug}`}
-            style={`display:inline-flex;align-items:center;padding:7px 16px;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;transition:all 0.15s;${categoria === cat.slug ? 'background:#252525;color:#FAFAF8;border:1px solid #252525;' : 'background:transparent;color:#716A56;border:1px solid #DDD8C8;'}`}
-            onmouseenter={`if(this.style.background!='rgb(37, 37, 37)')this.style.borderColor='#716A56'`}
-            onmouseleave={`if(this.style.background!='rgb(37, 37, 37)')this.style.borderColor='#DDD8C8'`}
-          >
-            {cat.name}
+        <!-- All categories link -->
+        {categoria && (
+          <a href="/tienda" style="font-size:12px;font-weight:700;color:#2B8080;text-decoration:none;white-space:nowrap;border-bottom:1px solid #2B8080;" onmouseenter="this.style.color='#1F6666'" onmouseleave="this.style.color='#2B8080'">
+            × Ver todo
           </a>
-        ))}
+        )}
       </div>
     </div>
   </div>
 
   <!-- Product grid -->
-  <div style="max-width:1440px;margin:0 auto;padding:48px 32px 80px;">
+  <div style="max-width:1440px;margin:0 auto;padding:32px 24px 72px;">
     {products.length > 0 ? (
       <div class="catalog-grid">
         {products.map((product: any) => <ProductCard product={product} />)}
       </div>
     ) : (
       <div style="text-align:center;padding:100px 32px;">
-        <p style="font-family:'Trirong',Georgia,serif;font-weight:300;font-size:1.8rem;color:#716A56;margin-bottom:8px;">Sin resultados</p>
-        <p style="font-size:13px;color:#9E9589;margin-bottom:24px;">Prueba con otra categoría o término</p>
-        <a href="/tienda" style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#3F5147;text-decoration:none;border-bottom:1px solid #3F5147;padding-bottom:2px;">Ver toda la colección</a>
+        <p style="font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:1.8rem;color:#888;margin-bottom:8px;">Sin resultados</p>
+        <p style="font-size:13px;color:#aaa;margin-bottom:24px;">Prueba con otra categoría o término de búsqueda</p>
+        <a href="/tienda" style="font-size:12px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#2B8080;text-decoration:none;border-bottom:2px solid #2B8080;padding-bottom:2px;">
+          Ver toda la colección
+        </a>
       </div>
     )}
   </div>
@@ -113,12 +134,12 @@ const pageTitle = activeCategory ? `${activeCategory.name} — Atlas&You` : 'Tod
   .catalog-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 16px;
   }
   @media (max-width: 1100px) {
     .catalog-grid { grid-template-columns: repeat(3, 1fr); }
   }
   @media (max-width: 700px) {
-    .catalog-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .catalog-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   }
 </style>

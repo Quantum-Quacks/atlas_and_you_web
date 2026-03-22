@@ -18,16 +18,17 @@ const img1 = product.images?.[0] || '';
 const img2 = product.images?.[1] || '';
 const isOnSale = product.compare_at_price && product.compare_at_price > product.price;
 const isOutOfStock = product.stock === 0;
+const isLowStock = product.stock > 0 && product.stock <= 3;
 const discount = isOnSale ? Math.round((1 - product.price / product.compare_at_price!) * 100) : 0;
 ---
 
 <a href={`/tienda/${product.slug}`} class="product-card-link">
-  <!-- Image area — 4:5 portrait, clean white bg -->
+  <!-- Image area -->
   <div class="product-card-img-wrap">
-    <!-- Placeholder gradient when no image -->
+
     {!img1 && (
-      <div style="width:100%;height:100%;background:linear-gradient(145deg,#f0ede8,#ddd8c8);display:flex;align-items:center;justify-content:center;">
-        <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#c4bfb4" stroke-width="1">
+      <div style="width:100%;height:100%;background:linear-gradient(145deg,#e8f4f4,#b2d8d8);display:flex;align-items:center;justify-content:center;">
+        <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#7dbcbc" stroke-width="1">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
         </svg>
       </div>
@@ -51,27 +52,32 @@ const discount = isOnSale ? Math.round((1 - product.price / product.compare_at_p
       />
     )}
 
-    <!-- Out of stock -->
+    <!-- Out of stock overlay -->
     {isOutOfStock && (
-      <div class="product-badge-oos">Agotado</div>
+      <div class="badge-oos">Agotado</div>
     )}
 
-    <!-- Sale -->
+    <!-- Sale badge: circular orange -->
     {isOnSale && !isOutOfStock && (
-      <div class="product-badge-sale">-{discount}%</div>
+      <div class="badge-sale">-{discount}%</div>
+    )}
+
+    <!-- Low stock -->
+    {isLowStock && !isOutOfStock && (
+      <div class="badge-low">¡Últimas!</div>
     )}
   </div>
 
   <!-- Text -->
   <div class="product-card-info">
-    <h3 class="product-card-name">{product.name}</h3>
     {product.tags && product.tags.length > 0 && (
       <p class="product-card-tag">{product.tags[0]}</p>
     )}
+    <h3 class="product-card-name">{product.name}</h3>
     <div class="product-card-price">
-      <span class="price-main">{product.price.toFixed(2)} €</span>
+      <span class="price-main">{product.price.toFixed(2).replace('.', ',')} €</span>
       {isOnSale && (
-        <span class="price-compare">{product.compare_at_price!.toFixed(2)} €</span>
+        <span class="price-compare">{product.compare_at_price!.toFixed(2).replace('.', ',')} €</span>
       )}
     </div>
   </div>
@@ -82,21 +88,18 @@ const discount = isOnSale ? Math.round((1 - product.price / product.compare_at_p
     display: block;
     text-decoration: none;
     color: inherit;
+    background: #fff;
+    transition: box-shadow 0.2s ease;
+  }
+  .product-card-link:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
   }
 
   .product-card-img-wrap {
     position: relative;
     overflow: hidden;
-    background: #FFFFFF;
+    background: #f9f9f9;
     aspect-ratio: 4/5;
-    border: 1px solid #DDD8C8;
-    box-shadow: 0 2px 8px rgba(37,37,37,0.05);
-    transition: box-shadow 0.3s ease;
-  }
-
-  .product-card-link:hover .product-card-img-wrap {
-    box-shadow: 0 6px 24px rgba(37,37,37,0.10);
-    border-color: #c8c4b4;
   }
 
   .product-img {
@@ -105,99 +108,118 @@ const discount = isOnSale ? Math.round((1 - product.price / product.compare_at_p
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease;
   }
 
-  /* Primary: slight scale on hover when no second image */
   .product-img-primary:not(.has-second) {
     transform: scale(1);
   }
   .product-card-link:hover .product-img-primary:not(.has-second) {
-    transform: scale(1.03);
+    transform: scale(1.04);
   }
 
-  /* Hover swap when two images */
   .product-img-primary.has-second { opacity: 1; }
   .product-card-link:hover .product-img-primary.has-second { opacity: 0; }
-
   .product-img-secondary { opacity: 0; }
   .product-card-link:hover .product-img-secondary { opacity: 1; }
 
-  /* Badges */
-  .product-badge-oos {
+  /* Circular orange sale badge */
+  .badge-sale {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #E85D04;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.02em;
+    box-shadow: 0 2px 8px rgba(232,93,4,0.4);
+  }
+
+  /* Low stock badge */
+  .badge-low {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #2B8080;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Out of stock */
+  .badge-oos {
     position: absolute;
     inset: 0;
-    background: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.6);
     backdrop-filter: blur(2px);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Quattrocento Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #716A56;
-    border: 1px solid #DDD8C8;
-    margin: 12px;
-  }
-
-  .product-badge-sale {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background: #3F5147;
-    color: #fff;
-    font-family: 'Quattrocento Sans', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 3px 8px;
+    color: #666;
   }
 
   /* Card text */
   .product-card-info {
-    padding: 10px 2px 0;
-  }
-
-  .product-card-name {
-    font-family: 'Quattrocento Sans', 'Inter', sans-serif;
-    font-size: 13px;
-    font-weight: 400;
-    color: #252525;
-    margin: 0 0 3px;
-    line-height: 1.4;
-    transition: color 0.15s;
-  }
-  .product-card-link:hover .product-card-name {
-    color: #3F5147;
+    padding: 12px 12px 14px;
   }
 
   .product-card-tag {
-    font-size: 11px;
-    color: #9E9589;
+    font-size: 10px;
+    color: #2B8080;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
+    font-weight: 700;
     margin: 0 0 4px;
+  }
+
+  .product-card-name {
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+    line-height: 1.35;
+    transition: color 0.15s;
+  }
+  .product-card-link:hover .product-card-name {
+    color: #2B8080;
   }
 
   .product-card-price {
     display: flex;
     align-items: baseline;
-    gap: 6px;
+    gap: 8px;
   }
 
   .price-main {
-    font-family: 'Quattrocento Sans', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: #252525;
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #2B8080;
   }
 
   .price-compare {
     font-size: 12px;
-    color: #9E9589;
+    color: #aaa;
     text-decoration: line-through;
+    font-weight: 400;
   }
 </style>
